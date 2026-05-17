@@ -12,6 +12,7 @@ public class MainViewModel : BaseViewModel
     private string _pageTitle;
     private string _breadcrumb;
     private string _displayName;
+    private string _activeMenu;
 
     public MainViewModel(string? displayName = null)
     {
@@ -19,19 +20,20 @@ public class MainViewModel : BaseViewModel
         _pageTitle = "Tổng quan";
         _breadcrumb = "Trang chủ / Tổng quan";
         _displayName = string.IsNullOrWhiteSpace(displayName) ? "Người dùng" : displayName;
+        _activeMenu = "Dashboard";
 
-        ShowDashboardCommand = new RelayCommand(_ => Navigate(new DashboardView(), "Tổng quan", "Trang chủ / Tổng quan"));
-        ShowProductCommand = new RelayCommand(_ => Navigate(new ProductView(), "Quản lý sản phẩm", "Trang chủ / Kho hàng / Sản phẩm"));
-        ShowCategoryCommand = new RelayCommand(_ => Navigate(new CategoryView(), "Danh mục sản phẩm", "Trang chủ / Kho hàng / Danh mục"));
-        ShowImeiCommand = new RelayCommand(_ => Navigate(new ImeiInventoryView(), "Quản lý IMEI", "Trang chủ / Kho hàng / IMEI"));
-        ShowImportCommand = new RelayCommand(_ => Navigate(new ImportStockView(), "Nhập kho", "Trang chủ / Kho hàng / Nhập kho"));
-        ShowExportCommand = new RelayCommand(_ => Navigate(new ExportStockView(), "Xuất kho", "Trang chủ / Bán hàng / Xuất kho"));
-        ShowCustomerCommand = new RelayCommand(_ => Navigate(new CustomerView(), "Khách hàng", "Trang chủ / Đối tác / Khách hàng"));
-        ShowSupplierCommand = new RelayCommand(_ => Navigate(new SupplierView(), "Nhà cung cấp", "Trang chủ / Đối tác / Nhà cung cấp"));
-        ShowDebtCommand = new RelayCommand(_ => Navigate(new DebtView(), "Công nợ", "Trang chủ / Tài chính / Công nợ"));
-        ShowForecastCommand = new RelayCommand(_ => Navigate(new StockForecastView(), "Dự đoán tồn kho", "Trang chủ / Kho hàng / Dự đoán tồn kho"));
-        ShowAuditCommand = new RelayCommand(_ => Navigate(new AuditLogView(), "Nhật ký hệ thống", "Trang chủ / Hệ thống / Nhật ký"));
-        ShowSettingCommand = new RelayCommand(_ => Navigate(new SettingView(), "Cài đặt", "Trang chủ / Hệ thống / Cài đặt"));
+        ShowDashboardCommand = new RelayCommand(_ => Navigate(new DashboardView(), "Tổng quan", "Trang chủ / Tổng quan", "Dashboard"));
+        ShowProductCommand = new RelayCommand(_ => Navigate(new ProductView(), "Quản lý sản phẩm", "Trang chủ / Kho hàng / Sản phẩm", "Product"));
+        ShowCategoryCommand = new RelayCommand(_ => Navigate(new CategoryView(), "Danh mục sản phẩm", "Trang chủ / Kho hàng / Danh mục", "Category"));
+        ShowImeiCommand = new RelayCommand(_ => Navigate(new ImeiInventoryView(), "Quản lý IMEI", "Trang chủ / Kho hàng / IMEI", "Imei"));
+        ShowImportCommand = new RelayCommand(_ => Navigate(new ImportStockView(), "Nhập kho", "Trang chủ / Kho hàng / Nhập kho", "Import"));
+        ShowExportCommand = new RelayCommand(_ => Navigate(new ExportStockView(), "Xuất kho", "Trang chủ / Bán hàng / Xuất kho", "Export"));
+        ShowCustomerCommand = new RelayCommand(_ => Navigate(new CustomerView(), "Khách hàng", "Trang chủ / Đối tác / Khách hàng", "Customer"));
+        ShowSupplierCommand = new RelayCommand(_ => Navigate(new SupplierView(), "Nhà cung cấp", "Trang chủ / Đối tác / Nhà cung cấp", "Supplier"));
+        ShowDebtCommand = new RelayCommand(_ => Navigate(new DebtView(), "Công nợ", "Trang chủ / Tài chính / Công nợ", "Debt"));
+        ShowForecastCommand = new RelayCommand(_ => Navigate(new StockForecastView(), "Dự đoán tồn kho", "Trang chủ / Kho hàng / Dự đoán tồn kho", "Forecast"));
+        ShowAuditCommand = new RelayCommand(_ => Navigate(new AuditLogView(), "Nhật ký hệ thống", "Trang chủ / Hệ thống / Nhật ký", "Audit"));
+        ShowSettingCommand = new RelayCommand(_ => Navigate(new SettingView(), "Cài đặt", "Trang chủ / Hệ thống / Cài đặt", "Setting"));
         ShowNotificationCommand = new RelayCommand(_ => MessageBoxHelper.Info("Hiện chưa có thông báo mới.", "Thông báo"));
         ShowAccountCommand = new RelayCommand(_ => MessageBoxHelper.Info($"Tài khoản đang đăng nhập: {DisplayName}", "Tài khoản"));
     }
@@ -60,6 +62,12 @@ public class MainViewModel : BaseViewModel
         set => SetProperty(ref _displayName, value);
     }
 
+    public string ActiveMenu
+    {
+        get => _activeMenu;
+        set => SetProperty(ref _activeMenu, value);
+    }
+
     public ICommand ShowDashboardCommand { get; }
     public ICommand ShowProductCommand { get; }
     public ICommand ShowCategoryCommand { get; }
@@ -75,10 +83,11 @@ public class MainViewModel : BaseViewModel
     public ICommand ShowNotificationCommand { get; }
     public ICommand ShowAccountCommand { get; }
 
-    private void Navigate(UserControl view, string title, string breadcrumb)
+    private void Navigate(UserControl view, string title, string breadcrumb, string activeMenu)
     {
         CurrentView = view;
         PageTitle = title;
         Breadcrumb = breadcrumb;
+        ActiveMenu = activeMenu;
     }
 }
