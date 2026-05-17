@@ -1,0 +1,52 @@
+﻿<UserControl x:Class="ERP_SMART_DT_Tuan_Anh.Views.Page.ReturnView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="360"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Style="{StaticResource CardStyle}">
+            <DataGrid ItemsSource="{Binding Returns}" Style="{StaticResource AppDataGridStyle}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Mã phiếu" Binding="{Binding Id}" Width="100"/>
+                    <DataGridTextColumn Header="Hóa đơn" Binding="{Binding BillId}" Width="150"/>
+                    <DataGridTextColumn Header="Loại trả" Binding="{Binding ReturnType}" Width="160"/>
+                    <DataGridTextColumn Header="Hoàn tiền" Binding="{Binding TotalRefund, StringFormat={}{0:N0}}" Width="130"/>
+                    <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedDate, StringFormat=dd/MM/yyyy}" Width="130"/>
+                    <DataGridTextColumn Header="Lý do" Binding="{Binding Reason}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+            <StackPanel>
+                <TextBlock Text="Phiếu trả hàng" FontSize="22" FontWeight="Bold" Margin="0,0,0,18"/>
+
+                <TextBlock Text="Mã hóa đơn"/>
+                <ComboBox ItemsSource="{Binding Bills}"
+                          SelectedValue="{Binding CurrentReturn.BillId}"
+                          SelectedValuePath="Id"
+                          DisplayMemberPath="Id"
+                          Height="42"
+                          Margin="0,5,0,12"/>
+
+                <TextBlock Text="Loại trả hàng"/>
+                <ComboBox SelectedValue="{Binding CurrentReturn.ReturnType}" Height="42" Margin="0,5,0,12">
+                    <ComboBoxItem Content="CUSTOMER_RETURN"/>
+                    <ComboBoxItem Content="SUPPLIER_RETURN"/>
+                </ComboBox>
+
+                <TextBlock Text="Số tiền hoàn"/>
+                <TextBox Text="{Binding CurrentReturn.TotalRefund}" Style="{StaticResource AppTextBoxStyle}" Margin="0,5,0,12"/>
+
+                <TextBlock Text="Lý do"/>
+                <TextBox Text="{Binding CurrentReturn.Reason}" Height="100" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,5,0,18"/>
+
+                <Button Content="Tạo mới" Command="{Binding NewCommand}" Style="{StaticResource OutlineButtonStyle}" Margin="0,0,0,10"/>
+                <Button Content="Lưu phiếu" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
