@@ -16,7 +16,7 @@
                     <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ImeiInventory.Product.ProductName}" Width="*"/>
                     <DataGridTextColumn Header="Ngày nhận" Binding="{Binding ReceiveDate, StringFormat=dd/MM/yyyy}" Width="120"/>
                     <DataGridTextColumn Header="Ngày trả" Binding="{Binding ReturnDate, StringFormat=dd/MM/yyyy}" Width="120"/>
-                    <DataGridTextColumn Header="Chi phí" Binding="{Binding Cost, StringFormat={}{0:N0}}" Width="120"/>
+                    <DataGridTextColumn Header="Chi phí" Binding="{Binding Cost, StringFormat={}{0:N0} VND}" Width="140"/>
                     <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="130"/>
                 </DataGrid.Columns>
             </DataGrid>
@@ -36,7 +36,7 @@
                 <TextBox Text="{Binding CurrentWarranty.Result}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,5,0,12"/>
 
                 <TextBlock Text="Chi phí"/>
-                <TextBox Text="{Binding CurrentWarranty.Cost}" Style="{StaticResource AppTextBoxStyle}" Margin="0,5,0,12"/>
+                <TextBox Text="{Binding CurrentWarranty.Cost, Converter={StaticResource MoneyInputConverter}, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Margin="0,5,0,12"/>
 
                 <TextBlock Text="Trạng thái"/>
                 <TextBox Text="{Binding CurrentWarranty.Status}" Style="{StaticResource AppTextBoxStyle}" Margin="0,5,0,18"/>

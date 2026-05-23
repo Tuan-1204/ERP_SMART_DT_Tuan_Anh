@@ -129,6 +129,8 @@ public class AppDbContext : DbContext
             {
                 table.HasCheckConstraint("CHK_Product_Price", "ImportPrice >= 0 AND ExportPrice >= 0");
                 table.HasCheckConstraint("CHK_Product_Stock", "CurrentStock >= 0");
+                table.HasTrigger("TRG_SoftDeleteProduct");
+                table.HasTrigger("TRG_AuditProductPrice");
             });
             entity.HasKey(e => e.Id);
 
@@ -175,6 +177,7 @@ public class AppDbContext : DbContext
             entity.ToTable("ImeiInventories", table =>
             {
                 table.HasCheckConstraint("CHK_Imei_Length", "LEN(Imei) >= 10");
+                table.HasTrigger("TRG_UpdateProductStock");
             });
             entity.HasKey(e => e.Imei);
 
@@ -223,7 +226,13 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<Bill>(entity =>
         {
-            entity.ToTable("Bills");
+            entity.ToTable("Bills", table =>
+            {
+                table.HasTrigger("TRG_UpdateObjectDebt");
+                table.HasTrigger("TRG_LogDebtTransaction");
+                table.HasTrigger("TRG_UpdateDebtOnBillUpdate");
+                table.HasTrigger("TRG_SyncImeiOnBillDelete");
+            });
             entity.HasKey(e => e.Id);
 
             entity.HasIndex(e => e.BillDate).HasDatabaseName("IX_Bill_Date");
@@ -255,7 +264,10 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<BillDetail>(entity =>
         {
-            entity.ToTable("BillDetails");
+            entity.ToTable("BillDetails", table =>
+            {
+                table.HasTrigger("TRG_ValidateImeiStatusBeforeSell");
+            });
             entity.HasKey(e => e.Id);
 
             entity.Property(e => e.BillId).HasMaxLength(50);

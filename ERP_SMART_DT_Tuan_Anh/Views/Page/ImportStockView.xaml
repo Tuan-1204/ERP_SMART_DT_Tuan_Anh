@@ -5,56 +5,261 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="360"/>
+                <ColumnDefinition Width="390"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel>
-                <TextBlock Text="Phiếu nhập kho"
-                           FontSize="26"
-                           FontWeight="Bold"
-                           Margin="0,0,0,20"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Phiếu nhập kho"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Margin="0,0,0,6"/>
 
-                <TextBlock Text="Nhà cung cấp"/>
-                <ComboBox ItemsSource="{Binding Suppliers}"
-                          SelectedItem="{Binding SelectedSupplier}"
-                          DisplayMemberPath="FullName"
-                          Height="42"
-                          Margin="0,6,0,14"/>
+                    <TextBlock Text="Nhập hàng từ nhà cung cấp"
+                               FontSize="15"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,18"/>
 
-                <TextBlock Text="Sản phẩm"/>
-                <ComboBox ItemsSource="{Binding Products}"
-                          SelectedItem="{Binding SelectedProduct}"
-                          DisplayMemberPath="ProductName"
-                          Height="42"
-                          Margin="0,6,0,14"/>
+                    <Border Background="#F7FAFC"
+                            BorderBrush="#DCE6F0"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18"
+                            Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="1. Thông tin nhà cung cấp"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,14"/>
 
-                <TextBlock Text="Đơn giá nhập"/>
-                <TextBox Text="{Binding UnitPrice}" Style="{StaticResource AppTextBoxStyle}" Margin="0,6,0,14"/>
+                            <TextBlock Text="Nhà cung cấp"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding Suppliers}"
+                                      SelectedItem="{Binding SelectedSupplier}"
+                                      DisplayMemberPath="FullName"
+                                      Height="44"
+                                      Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
 
-                <TextBlock Text="Đã thanh toán"/>
-                <TextBox Text="{Binding PaidAmount}" Style="{StaticResource AppTextBoxStyle}" Margin="0,6,0,14"/>
+                    <Border Background="#F7FAFC"
+                            BorderBrush="#DCE6F0"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18"
+                            Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="2. Chọn sản phẩm nhập kho"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,14"/>
 
-                <TextBlock Text="Ghi chú"/>
-                <TextBox Text="{Binding Note}" Height="80" TextWrapping="Wrap" AcceptsReturn="True"/>
-            </StackPanel>
+                            <TextBlock Text="Nhập mã hoặc tên sản phẩm"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"/>
+                            <Grid Margin="0,6,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="118"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource AppTextBoxStyle}"
+                                         Margin="0,0,10,0"/>
+                                <Button Grid.Column="1"
+                                        Content="Tìm"
+                                        Command="{Binding FindProductCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                            </Grid>
+
+                            <TextBlock Text="Sản phẩm đã chọn"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding Products}"
+                                      SelectedItem="{Binding SelectedProduct}"
+                                      DisplayMemberPath="ProductName"
+                                      Height="44"
+                                      Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#F7FAFC"
+                            BorderBrush="#DCE6F0"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18"
+                            Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="3. Quét mã sản phẩm hoặc IMEI"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,14"/>
+
+                            <TextBlock Text="quét barcode để nhập dữ liệu "
+                                       FontSize="14"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Margin="0,0,0,8"/>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="118"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding BarcodeText, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource AppTextBoxStyle}"
+                                         Margin="0,0,10,0"/>
+                                <Button Grid.Column="1"
+                                        Content="Xử lý"
+                                        Command="{Binding ScanBarcodeCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                            </Grid>
+
+                            <TextBlock Text="{Binding ScanMessage}"
+                                       FontSize="14"
+                                       TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#F7FAFC"
+                            BorderBrush="#DCE6F0"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="4. Thanh toán cho nhà cung cấp"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,14"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Margin="0,0,8,0">
+                                    <TextBlock Text="Đơn giá nhập"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding UnitPriceText, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource AppTextBoxStyle}"
+                                             Margin="0,6,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="Đã trả NCC"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource AppTextBoxStyle}"
+                                             Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Ghi chú"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Margin="0,14,0,0"/>
+                            <TextBox Text="{Binding Note}"
+                                     Height="76"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
             <StackPanel Grid.Column="1" Margin="24,0,0,0">
-                <TextBlock Text="Danh sách IMEI"
-                           FontSize="22"
-                           FontWeight="Bold"
-                           Margin="0,0,0,12"/>
+                <Border Background="#F7FAFC"
+                        BorderBrush="#DCE6F0"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="Danh sách IMEI nhập kho"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,8"/>
 
-                <TextBox Text="{Binding ImeiText}"
-                         Height="360"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"/>
+                       
+
+                        <TextBox Text="{Binding ImeiText, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="300"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#FFF8E8"
+                        BorderBrush="#E3C370"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="18"
+                        Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Tóm tắt phiếu nhập"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,12"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Số lượng IMEI"
+                                       FontSize="15"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding QuantityText}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Tổng tiền nhập"
+                                       FontSize="15"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding TotalAmountText}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Còn nợ NCC"
+                                       FontSize="15"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding RemainingSupplierDebtText}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource DangerBrush}"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding PaymentStatusText}"
+                                   FontSize="14"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
 
                 <Button Content="Lưu phiếu nhập"
                         Command="{Binding ImportCommand}"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Height="50"
-                        Margin="0,20,0,0"/>
+                        Height="54"
+                        FontSize="18"
+                        Margin="0,18,0,0"/>
             </StackPanel>
         </Grid>
     </Border>

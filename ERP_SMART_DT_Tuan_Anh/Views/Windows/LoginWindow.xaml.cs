@@ -30,6 +30,15 @@ public partial class LoginWindow : Window
         Close();
     }
 
+    private void LoginWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+        Login_Click(sender, e);
+    }
+
     private void Minimize_Click(object sender, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;

@@ -11,7 +11,7 @@
             <UniformGrid Columns="4">
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel>
-                        <TextBlock Text="{Binding Summary.TotalRevenue, StringFormat={}{0:N0} đ}"
+                        <TextBlock Text="{Binding Summary.TotalRevenue, StringFormat={}{0:N0} VND}"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource PrimaryBrush}"/>
@@ -21,7 +21,7 @@
 
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel>
-                        <TextBlock Text="{Binding Summary.TotalImport, StringFormat={}{0:N0} đ}"
+                        <TextBlock Text="{Binding Summary.TotalImport, StringFormat={}{0:N0} VND}"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource AccentBrush}"/>
@@ -68,7 +68,7 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName}" Width="*"/>
                                 <DataGridTextColumn Header="Đã bán" Binding="{Binding SoldCount}" Width="100"/>
-                                <DataGridTextColumn Header="Doanh thu" Binding="{Binding TotalAmount, StringFormat={}{0:N0}}" Width="130"/>
+                                <DataGridTextColumn Header="Doanh thu" Binding="{Binding TotalAmount, StringFormat={}{0:N0} VND}" Width="150"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>

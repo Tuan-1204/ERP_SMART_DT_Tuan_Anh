@@ -30,16 +30,84 @@
                           FontSize="15"
                           Margin="0,6,0,14"/>
 
-                <TextBlock Text="Đơn giá bán" FontSize="15" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding UnitPrice}" Style="{StaticResource AppTextBoxStyle}" Margin="0,6,0,14"/>
+                <TextBlock Text="Quét barcode/IMEI" FontSize="15" FontWeight="SemiBold"/>
+                <Grid Margin="0,6,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding BarcodeText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource AppTextBoxStyle}"
+                             Margin="0,0,8,0"/>
+                    <Button Grid.Column="1"
+                            Content="Xử lý"
+                            Command="{Binding ScanBarcodeCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"/>
+                </Grid>
 
-                <TextBlock Text="Khách đã thanh toán" FontSize="15" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding PaidAmount}" Style="{StaticResource AppTextBoxStyle}" Margin="0,6,0,14"/>
+                <TextBlock Text="{Binding ScanMessage}"
+                           FontSize="14"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,0,0,14"/>
+
+                <TextBlock Text="Đơn giá bán (VND)" FontSize="15" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding UnitPriceText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource AppTextBoxStyle}"
+                         Margin="0,6,0,14"/>
+
+                <TextBlock Text="Số tiền khách đưa (VND)" FontSize="15" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding PaidAmountText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource AppTextBoxStyle}"
+                         Margin="0,6,0,14"/>
+
+                <Border Background="#F7F7F7"
+                        BorderBrush="#D6D6D6"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="14"
+                        Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Tổng tiền" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding TotalAmount, StringFormat={}{0:N0} VND}"
+                                   FontSize="16"
+                                   FontWeight="Bold"/>
+
+                        <TextBlock Grid.Row="1" Text="Tiền thừa" FontSize="15" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Text="{Binding ChangeAmount, StringFormat={}{0:N0} VND}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource SuccessBrush}"
+                                   Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="2" Text="Còn nợ" FontSize="15" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="1"
+                                   Text="{Binding RemainingAmount, StringFormat={}{0:N0} VND}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource DangerBrush}"
+                                   Margin="0,8,0,0"/>
+                    </Grid>
+                </Border>
 
                 <TextBlock Text="Ghi chú"
                            FontSize="15"
                            FontWeight="SemiBold"/>
-                <TextBlock Text="Hệ thống chỉ cho phép xuất các IMEI đang ở trạng thái Trong kho. SQL Stored Procedure và Trigger sẽ kiểm tra lần cuối trước khi lưu."
+                <TextBlock Text="Hệ thống chỉ cho phép xuất các IMEI đang ở trạng thái Trong kho."
                            TextWrapping="Wrap"
                            FontSize="14"
                            Foreground="{StaticResource TextSecondaryBrush}"

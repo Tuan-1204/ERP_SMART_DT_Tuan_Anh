@@ -16,7 +16,7 @@
                     <DataGridTextColumn Header="Số điện thoại" Binding="{Binding Phone}" Width="140"/>
                     <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="190"/>
                     <DataGridTextColumn Header="Mã số thuế" Binding="{Binding TaxCode}" Width="130"/>
-                    <DataGridTextColumn Header="Công nợ" Binding="{Binding TotalDebt, StringFormat={}{0:N0}}" Width="130"/>
+                    <DataGridTextColumn Header="Công nợ" Binding="{Binding TotalDebt, StringFormat={}{0:N0} VND}" Width="150"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
@@ -45,7 +45,7 @@
 
                 <Button Content="Tạo mới" Command="{Binding NewCommand}" Style="{StaticResource OutlineButtonStyle}" Margin="0,0,0,10"/>
                 <Button Content="Lưu" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,0,10"/>
-                <Button Content="Xóa mềm" Command="{Binding DeleteCommand}" Style="{StaticResource OutlineButtonStyle}"/>
+                <Button Content="Xóa " Command="{Binding DeleteCommand}" Style="{StaticResource OutlineButtonStyle}"/>
             </StackPanel>
         </Border>
     </Grid>

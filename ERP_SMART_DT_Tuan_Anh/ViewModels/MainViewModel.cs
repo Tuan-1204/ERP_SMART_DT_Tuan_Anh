@@ -31,9 +31,14 @@ public class MainViewModel : BaseViewModel
         ShowCustomerCommand = new RelayCommand(_ => Navigate(new CustomerView(), "Khách hàng", "Trang chủ / Đối tác / Khách hàng", "Customer"));
         ShowSupplierCommand = new RelayCommand(_ => Navigate(new SupplierView(), "Nhà cung cấp", "Trang chủ / Đối tác / Nhà cung cấp", "Supplier"));
         ShowDebtCommand = new RelayCommand(_ => Navigate(new DebtView(), "Công nợ", "Trang chủ / Tài chính / Công nợ", "Debt"));
+        ShowInventoryCheckCommand = new RelayCommand(_ => Navigate(new InventoryCheckView(), "Phiếu kiểm kê", "Trang chủ / Kho hàng / Phiếu kiểm kê", "InventoryCheck"));
+        ShowWarrantyCommand = new RelayCommand(_ => Navigate(new WarrantyView(), "Phiếu bảo hành", "Trang chủ / Kho hàng / Phiếu bảo hành", "Warranty"));
+        ShowReturnCommand = new RelayCommand(_ => Navigate(new ReturnView(), "Phiếu trả hàng", "Trang chủ / Kho hàng / Phiếu trả hàng", "Return"));
         ShowForecastCommand = new RelayCommand(_ => Navigate(new StockForecastView(), "Dự đoán tồn kho", "Trang chủ / Kho hàng / Dự đoán tồn kho", "Forecast"));
+        ShowUserManagementCommand = new RelayCommand(_ => Navigate(new UserManagementView(), "Quản lý người dùng", "Trang chủ / Hệ thống / Người dùng", "UserManagement"));
+        ShowRoleManagementCommand = new RelayCommand(_ => Navigate(new RoleManagementView(), "Vai trò người dùng", "Trang chủ / Hệ thống / Vai trò", "RoleManagement"));
         ShowAuditCommand = new RelayCommand(_ => Navigate(new AuditLogView(), "Nhật ký hệ thống", "Trang chủ / Hệ thống / Nhật ký", "Audit"));
-        ShowSettingCommand = new RelayCommand(_ => Navigate(new SettingView(), "Cài đặt", "Trang chủ / Hệ thống / Cài đặt", "Setting"));
+        ShowSettingCommand = new RelayCommand(_ => Navigate(new SettingView(), "Cấu hình hệ thống", "Trang chủ / Hệ thống / Cấu hình", "Setting"));
         ShowNotificationCommand = new RelayCommand(_ => MessageBoxHelper.Info("Hiện chưa có thông báo mới.", "Thông báo"));
         ShowAccountCommand = new RelayCommand(_ => MessageBoxHelper.Info($"Tài khoản đang đăng nhập: {DisplayName}", "Tài khoản"));
     }
@@ -77,7 +82,12 @@ public class MainViewModel : BaseViewModel
     public ICommand ShowCustomerCommand { get; }
     public ICommand ShowSupplierCommand { get; }
     public ICommand ShowDebtCommand { get; }
+    public ICommand ShowInventoryCheckCommand { get; }
+    public ICommand ShowWarrantyCommand { get; }
+    public ICommand ShowReturnCommand { get; }
     public ICommand ShowForecastCommand { get; }
+    public ICommand ShowUserManagementCommand { get; }
+    public ICommand ShowRoleManagementCommand { get; }
     public ICommand ShowAuditCommand { get; }
     public ICommand ShowSettingCommand { get; }
     public ICommand ShowNotificationCommand { get; }

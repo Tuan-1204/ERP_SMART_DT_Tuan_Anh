@@ -66,7 +66,7 @@ public class CategoryViewModel : BaseViewModel
         if (CurrentCategory.Id == 0)
             return;
 
-        if (!MessageBoxHelper.Confirm("Bạn có chắc muốn xóa mềm danh mục này?"))
+        if (!MessageBoxHelper.Confirm("Bạn có chắc muốn xóa danh mục này?"))
             return;
 
         await _service.SoftDeleteAsync(CurrentCategory.Id);

@@ -19,9 +19,9 @@ public class SidebarActiveBrushConverter : IValueConverter
 
         return brushType switch
         {
-            "Foreground" => CreateBrush(isActive ? "#2F65B0" : "#1F2933"),
-            "Border" => CreateBrush(isActive ? "#2F65B0" : "#555555"),
-            _ => CreateBrush(isActive ? "#DCEBFF" : "#FFFFFF")
+            "Foreground" => CreateBrush(isActive ? "#174EA6" : "#243B53"),
+            "Border" => CreateBrush(isActive ? "#2F65B0" : "#00FFFFFF"),
+            _ => CreateBrush(isActive ? "#DCEBFF" : "#00FFFFFF")
         };
     }
 

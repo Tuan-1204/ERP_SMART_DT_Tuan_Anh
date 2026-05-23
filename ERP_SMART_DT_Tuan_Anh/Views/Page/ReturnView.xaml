@@ -13,7 +13,7 @@
                     <DataGridTextColumn Header="Mã phiếu" Binding="{Binding Id}" Width="100"/>
                     <DataGridTextColumn Header="Hóa đơn" Binding="{Binding BillId}" Width="150"/>
                     <DataGridTextColumn Header="Loại trả" Binding="{Binding ReturnType}" Width="160"/>
-                    <DataGridTextColumn Header="Hoàn tiền" Binding="{Binding TotalRefund, StringFormat={}{0:N0}}" Width="130"/>
+                    <DataGridTextColumn Header="Hoàn tiền" Binding="{Binding TotalRefund, StringFormat={}{0:N0} VND}" Width="150"/>
                     <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedDate, StringFormat=dd/MM/yyyy}" Width="130"/>
                     <DataGridTextColumn Header="Lý do" Binding="{Binding Reason}" Width="*"/>
                 </DataGrid.Columns>
@@ -39,7 +39,7 @@
                 </ComboBox>
 
                 <TextBlock Text="Số tiền hoàn"/>
-                <TextBox Text="{Binding CurrentReturn.TotalRefund}" Style="{StaticResource AppTextBoxStyle}" Margin="0,5,0,12"/>
+                <TextBox Text="{Binding CurrentReturn.TotalRefund, Converter={StaticResource MoneyInputConverter}, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Margin="0,5,0,12"/>
 
                 <TextBlock Text="Lý do"/>
                 <TextBox Text="{Binding CurrentReturn.Reason}" Height="100" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,5,0,18"/>

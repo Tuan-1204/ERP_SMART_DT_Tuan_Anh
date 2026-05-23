@@ -32,9 +32,44 @@ public class ImeiService
     {
         await using var db = DbContextFactory.Create();
 
+        imei = imei.Trim();
+
         return await db.ImeiInventories
             .Include(x => x.Product)
             .Include(x => x.Status)
             .FirstOrDefaultAsync(x => x.Imei == imei && !x.IsDeleted);
+    }
+
+    public async Task<List<ImeiInventory>> GetByImeisAsync(IEnumerable<string> imeis)
+    {
+        await using var db = DbContextFactory.Create();
+
+        var imeiList = imeis
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList();
+
+        return await db.ImeiInventories
+            .Include(x => x.Product)
+            .Include(x => x.Status)
+            .Where(x => imeiList.Contains(x.Imei) && !x.IsDeleted)
+            .ToListAsync();
+    }
+
+    public async Task<List<string>> GetExistingImeisAsync(IEnumerable<string> imeis)
+    {
+        await using var db = DbContextFactory.Create();
+
+        var imeiList = imeis
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList();
+
+        return await db.ImeiInventories
+            .Where(x => imeiList.Contains(x.Imei) && !x.IsDeleted)
+            .Select(x => x.Imei)
+            .ToListAsync();
     }
 }

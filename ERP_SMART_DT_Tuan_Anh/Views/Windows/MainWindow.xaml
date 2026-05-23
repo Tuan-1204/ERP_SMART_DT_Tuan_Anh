@@ -20,84 +20,139 @@
     <Border BorderBrush="#777" BorderThickness="1">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="228"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Background="White"
-                    BorderBrush="#D0D0D0"
+                    Background="#FFFFFF"
+                    BorderBrush="#D9E2EC"
                     BorderThickness="0,0,1,0">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Top">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            Padding="18,22,18,14"
+                            BorderBrush="#EEF2F6"
+                            BorderThickness="0,0,0,1">
+                    <StackPanel>
                         <TextBlock Text="ERP-Smart"
                                    Foreground="{StaticResource AccentBrush}"
-                                   FontSize="30"
-                                   FontWeight="Bold"
-                                   Margin="28,26,0,0"/>
+                                   FontSize="28"
+                                   FontWeight="Bold"/>
 
                         <TextBlock Text="Điện Tử Tuấn Anh"
                                    Foreground="{StaticResource PrimaryBrush}"
-                                   FontSize="18"
+                                   FontSize="16"
                                    FontWeight="Bold"
-                                   Margin="30,-6,0,26"/>
-                    </StackPanel>
+                                   Margin="2,-5,0,0"/>
 
+                        <Border Background="#F3F7FB"
+                                CornerRadius="8"
+                                Padding="10,7"
+                                Margin="0,14,0,0">
+                            <TextBlock Text="Quản lý kho IMEI"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#52606D"/>
+                        </Border>
+                    </StackPanel>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowDashboardCommand}" Content="▦  Tổng quan"
+                        <TextBlock Text="TỔNG QUAN" Style="{StaticResource SidebarSectionTextStyle}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowDashboardCommand}" Content="Tổng quan"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Dashboard:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Dashboard:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Dashboard:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowProductCommand}" Content="▣  Sản phẩm"
+
+                        <TextBlock Text="KHO HÀNG" Style="{StaticResource SidebarSectionTextStyle}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowProductCommand}" Content="Sản phẩm"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Product:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Product:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Product:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowCategoryCommand}" Content="▤  Danh mục"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowCategoryCommand}" Content="Danh mục"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Category:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Category:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Category:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowImeiCommand}" Content="▥  IMEI"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowImeiCommand}" Content="IMEI"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Imei:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Imei:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Imei:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowImportCommand}" Content="+  Nhập kho"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowImportCommand}" Content="Nhập kho"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Import:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Import:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Import:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowExportCommand}" Content="↗  Xuất kho"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowExportCommand}" Content="Xuất kho"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Export:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Export:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Export:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowCustomerCommand}" Content="☺  Khách hàng"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowInventoryCheckCommand}" Content="Phiếu kiểm kê"
+                                Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=InventoryCheck:Background}"
+                                Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=InventoryCheck:Foreground}"
+                                BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=InventoryCheck:Border}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowWarrantyCommand}" Content="Phiếu bảo hành"
+                                Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Warranty:Background}"
+                                Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Warranty:Foreground}"
+                                BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Warranty:Border}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowReturnCommand}" Content="Phiếu trả hàng"
+                                Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Return:Background}"
+                                Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Return:Foreground}"
+                                BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Return:Border}"/>
+
+                        <TextBlock Text="ĐỐI TÁC - TÀI CHÍNH" Style="{StaticResource SidebarSectionTextStyle}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowCustomerCommand}" Content="Khách hàng"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Customer:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Customer:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Customer:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowSupplierCommand}" Content="▧  Nhà cung cấp"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowSupplierCommand}" Content="Nhà cung cấp"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Supplier:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Supplier:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Supplier:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowDebtCommand}" Content="$  Công nợ"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowDebtCommand}" Content="Công nợ"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Debt:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Debt:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Debt:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowForecastCommand}" Content="▲  Dự báo tồn kho"
+
+                        <TextBlock Text="BÁO CÁO" Style="{StaticResource SidebarSectionTextStyle}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowForecastCommand}" Content="Dự báo tồn kho"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Forecast:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Forecast:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Forecast:Border}"/>
                     </StackPanel>
+                    </ScrollViewer>
 
-                    <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,24">
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowSettingCommand}" Content="⚙  Cài đặt"
+                    <Border Grid.Row="2"
+                            BorderBrush="#EEF2F6"
+                            BorderThickness="0,1,0,0"
+                            Padding="0,8,0,12">
+                    <StackPanel>
+                        <TextBlock Text="HỆ THỐNG" Style="{StaticResource SidebarSectionTextStyle}" Margin="18,0,0,5"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowUserManagementCommand}" Content="Người dùng"
+                                Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=UserManagement:Background}"
+                                Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=UserManagement:Foreground}"
+                                BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=UserManagement:Border}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowRoleManagementCommand}" Content="Vai trò"
+                                Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=RoleManagement:Background}"
+                                Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=RoleManagement:Foreground}"
+                                BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=RoleManagement:Border}"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowSettingCommand}" Content="Cấu hình"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Setting:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Setting:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Setting:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowAuditCommand}" Content="☷  Nhật ký"
+                        <Button Style="{StaticResource SidebarButtonStyle}" Command="{Binding ShowAuditCommand}" Content="Nhật ký"
                                 Background="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Audit:Background}"
                                 Foreground="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Audit:Foreground}"
                                 BorderBrush="{Binding ActiveMenu, Converter={StaticResource SidebarActiveBrushConverter}, ConverterParameter=Audit:Border}"/>
-                        <Button Style="{StaticResource SidebarButtonStyle}" Content="↩  Đăng xuất" Click="Logout_Click"/>
+                        <Button Style="{StaticResource SidebarButtonStyle}" Content="Đăng xuất" Click="Logout_Click"/>
                     </StackPanel>
-                </DockPanel>
+                    </Border>
+                </Grid>
             </Border>
 
             <Grid Grid.Column="1">

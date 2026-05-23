@@ -19,7 +19,7 @@
                           Margin="0,6,0,14"/>
 
                 <TextBlock Text="Số tiền thanh toán"/>
-                <TextBox Text="{Binding PaymentAmount}" Style="{StaticResource AppTextBoxStyle}" Margin="0,6,0,14"/>
+                <TextBox Text="{Binding PaymentAmount, Converter={StaticResource MoneyInputConverter}, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBoxStyle}" Margin="0,6,0,14"/>
 
                 <TextBlock Text="Ghi chú"/>
                 <TextBox Text="{Binding Note}" Height="90" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,6,0,18"/>
@@ -40,7 +40,7 @@
                         <DataGridTextColumn Header="Ngày" Binding="{Binding TransactionDate, StringFormat=dd/MM/yyyy HH:mm}" Width="150"/>
                         <DataGridTextColumn Header="Mã hóa đơn" Binding="{Binding BillId}" Width="140"/>
                         <DataGridTextColumn Header="Loại" Binding="{Binding Type}" Width="100"/>
-                        <DataGridTextColumn Header="Số tiền" Binding="{Binding Amount, StringFormat={}{0:N0}}" Width="130"/>
+                        <DataGridTextColumn Header="Số tiền" Binding="{Binding Amount, StringFormat={}{0:N0} VND}" Width="150"/>
                         <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
