@@ -1,39 +1,56 @@
-﻿using ERP_SMART_DT_Tuan_Anh.DTOs;
+﻿using System;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using ERP_SMART_DT_Tuan_Anh.DTOs;
 using ERP_SMART_DT_Tuan_Anh.Services;
 
-namespace ERP_SMART_DT_Tuan_Anh.ViewModels;
-
-public class DashboardViewModel : BaseViewModel
+namespace ERP_SMART_DT_Tuan_Anh.ViewModels
 {
-    private readonly DashboardService _dashboardService = new();
-
-    private DashboardSummaryDto _summary = new();
-
-    public DashboardSummaryDto Summary
+    public partial class DashboardViewModel : ObservableObject
     {
-        get => _summary;
-        set => SetProperty(ref _summary, value);
-    }
+        private readonly DashboardService _dashboardService = new();
 
-    public DashboardViewModel()
-    {
-        _ = LoadAsync();
-    }
+        // Tự động sinh ra thuộc tính public 'Summary' chuẩn MVVM
+        [ObservableProperty]
+        private DashboardSummaryDto _summary = new();
 
-    public async Task LoadAsync()
-    {
-        try
+        // Trạng thái hiển thị vòng xoay Loading màn hình ngầm
+        [ObservableProperty]
+        private bool _isBusy;
+
+        // Lưu thông báo lỗi nếu gặp sự cố kết nối
+        [ObservableProperty]
+        private string _errorMessage = string.Empty;
+
+        public DashboardViewModel()
         {
-            IsBusy = true;
-            Summary = await _dashboardService.GetSummaryAsync();
+            // Nạp dữ liệu tự động ngay khi màn hình Dashboard được khởi tạo
+            _ = LoadDataAsync();
         }
-        catch (Exception ex)
+
+        // Tạo ra LoadDataCommand liên kết thẳng tới nút "Làm mới" trên giao diện XAML
+        [RelayCommand]
+        public async Task LoadDataAsync()
         {
-            ErrorMessage = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
+            if (IsBusy) return;
+
+            try
+            {
+                IsBusy = true;
+                ErrorMessage = string.Empty;
+
+                // Gọi tầng dịch vụ để nạp dữ liệu Multi-Result Set mới nhất
+                Summary = await _dashboardService.GetSummaryAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Không thể làm mới dữ liệu tổng quan: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
     }
 }

@@ -1,308 +1,213 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using ERP_SMART_DT_Tuan_Anh.Commands;
+using CommunityToolkit.Mvvm.Input;
 using ERP_SMART_DT_Tuan_Anh.DTOs;
 using ERP_SMART_DT_Tuan_Anh.Helpers;
 using ERP_SMART_DT_Tuan_Anh.Models;
 using ERP_SMART_DT_Tuan_Anh.Services;
 
-namespace ERP_SMART_DT_Tuan_Anh.ViewModels;
-
-public class ImportStockViewModel : BaseViewModel
+namespace ERP_SMART_DT_Tuan_Anh.ViewModels
 {
-    private readonly StockService _stockService = new();
-    private readonly ProductService _productService = new();
-    private readonly PartnerService _partnerService = new();
-    private readonly ImeiService _imeiService = new();
-
-    private Product? _selectedProduct;
-    private Partner? _selectedSupplier;
-    private string _unitPriceText = string.Empty;
-    private string _paidAmountText = string.Empty;
-    private string _note = string.Empty;
-    private string _imeiText = string.Empty;
-    private string _barcodeText = string.Empty;
-    private string _productSearchText = string.Empty;
-    private string _scanMessage = "Có thể nhập tay tên/mã sản phẩm hoặc quét barcode sản phẩm/IMEI.";
-
-    public ObservableCollection<Product> Products { get; } = new();
-    public ObservableCollection<Partner> Suppliers { get; } = new();
-
-    public Product? SelectedProduct
+    public class ImportStockViewModel : BaseViewModel
     {
-        get => _selectedProduct;
-        set
+        private readonly StockService _stockService = new();
+        private readonly ProductService _productService = new();
+        private readonly PartnerService _partnerService = new();
+
+        public ObservableCollection<Product> Products { get; } = new();
+        public ObservableCollection<Partner> Suppliers { get; } = new();
+
+        private Product? _selectedProduct;
+        private Partner? _selectedSupplier;
+        private string _unitPriceText = string.Empty;
+        private string _paidAmountText = string.Empty;
+        private string _rawImeiText = string.Empty;
+        private decimal _totalAmount;
+        private decimal _remainingDebtAmount;
+        private string _noteText = string.Empty;
+
+        public Product? SelectedProduct
         {
-            if (SetProperty(ref _selectedProduct, value) && value != null)
-                UnitPriceText = MoneyHelper.FormatInput(value.ImportPrice);
-        }
-    }
-
-    public Partner? SelectedSupplier
-    {
-        get => _selectedSupplier;
-        set => SetProperty(ref _selectedSupplier, value);
-    }
-
-    public string UnitPriceText
-    {
-        get => _unitPriceText;
-        set
-        {
-            if (SetProperty(ref _unitPriceText, MoneyHelper.NormalizeInput(value)))
-                RefreshMoneySummary();
-        }
-    }
-
-    public string PaidAmountText
-    {
-        get => _paidAmountText;
-        set
-        {
-            if (SetProperty(ref _paidAmountText, MoneyHelper.NormalizeInput(value)))
-                RefreshMoneySummary();
-        }
-    }
-
-    public string Note
-    {
-        get => _note;
-        set => SetProperty(ref _note, value);
-    }
-
-    public string ImeiText
-    {
-        get => _imeiText;
-        set
-        {
-            if (SetProperty(ref _imeiText, value))
-                RefreshMoneySummary();
-        }
-    }
-
-    public string BarcodeText
-    {
-        get => _barcodeText;
-        set => SetProperty(ref _barcodeText, value);
-    }
-
-    public string ProductSearchText
-    {
-        get => _productSearchText;
-        set => SetProperty(ref _productSearchText, value);
-    }
-
-    public string ScanMessage
-    {
-        get => _scanMessage;
-        set => SetProperty(ref _scanMessage, value);
-    }
-
-    public int ImeiQuantity => ImeiHelper.ParseImeiList(ImeiText).Count;
-
-    public decimal TotalAmount => MoneyHelper.ParseVnd(UnitPriceText) * ImeiQuantity;
-
-    public decimal RemainingSupplierDebt
-    {
-        get
-        {
-            var remaining = TotalAmount - MoneyHelper.ParseVnd(PaidAmountText);
-            return remaining > 0 ? remaining : 0;
-        }
-    }
-
-    public string QuantityText => $"{ImeiQuantity:N0} IMEI";
-
-    public string TotalAmountText => $"{TotalAmount:N0} VND";
-
-    public string RemainingSupplierDebtText => $"{RemainingSupplierDebt:N0} VND";
-
-    public string PaymentStatusText
-    {
-        get
-        {
-            if (ImeiQuantity == 0 || TotalAmount <= 0)
-                return "Chưa có dữ liệu tính tiền";
-
-            return RemainingSupplierDebt > 0
-                ? "Phiếu nhập còn công nợ nhà cung cấp"
-                : "Phiếu nhập đã thanh toán đủ cho nhà cung cấp";
-        }
-    }
-
-    public ICommand ImportCommand { get; }
-    public ICommand ScanBarcodeCommand { get; }
-    public ICommand FindProductCommand { get; }
-
-    public ImportStockViewModel()
-    {
-        ImportCommand = new AsyncRelayCommand(_ => ImportAsync());
-        ScanBarcodeCommand = new AsyncRelayCommand(_ => ScanBarcodeAsync());
-        FindProductCommand = new RelayCommand(_ => FindProductByText());
-        _ = LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        Products.Clear();
-        Suppliers.Clear();
-
-        foreach (var item in await _productService.GetAllAsync())
-            Products.Add(item);
-
-        foreach (var item in await _partnerService.GetSuppliersAsync())
-            Suppliers.Add(item);
-    }
-
-    private async Task ScanBarcodeAsync()
-    {
-        var code = BarcodeText.Trim();
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            MessageBoxHelper.Warning("Vui lòng nhập hoặc quét mã barcode.");
-            return;
+            get => _selectedProduct;
+            set
+            {
+                if (SetProperty(ref _selectedProduct, value) && value != null)
+                {
+                    UnitPriceText = value.ImportPrice.ToString("N0");
+                    RecalculateImportPayment();
+                }
+            }
         }
 
-        var productByCode = await _productService.GetByCodeAsync(code);
-        if (productByCode != null)
+        public Partner? SelectedSupplier
         {
-            SelectProduct(productByCode.Id);
-            ScanMessage = $"Đã chọn sản phẩm: {productByCode.ProductName}.";
-            return;
+            get => _selectedSupplier;
+            set => SetProperty(ref _selectedSupplier, value);
         }
 
-        var imei = await _imeiService.GetByImeiAsync(code);
-        if (imei != null)
+        public string UnitPriceText
         {
-            if (imei.ProductId.HasValue)
-                SelectProduct(imei.ProductId.Value);
-
-            ScanMessage = $"IMEI đã tồn tại, thuộc sản phẩm: {imei.Product?.ProductName ?? "không xác định"}. Không được nhập trùng.";
-            MessageBoxHelper.Warning(ScanMessage);
-            return;
+            get => _unitPriceText;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    SetProperty(ref _unitPriceText, value);
+                    RecalculateImportPayment();
+                    return;
+                }
+                string clean = value.Replace(",", "").Replace(".", "").Trim();
+                if (decimal.TryParse(clean, out decimal parsed))
+                {
+                    if (SetProperty(ref _unitPriceText, parsed.ToString("N0")))
+                        RecalculateImportPayment();
+                }
+            }
         }
 
-        ImeiText = AppendImei(ImeiText, code);
-        ScanMessage = "IMEI mới đã được thêm vào danh sách nhập kho.";
-    }
-
-    private void FindProductByText()
-    {
-        var keyword = ProductSearchText.Trim();
-        if (string.IsNullOrWhiteSpace(keyword))
+        public string PaidAmountText
         {
-            MessageBoxHelper.Warning("Vui lòng nhập mã hoặc tên sản phẩm cần tìm.");
-            return;
+            get => _paidAmountText;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    SetProperty(ref _paidAmountText, value);
+                    RecalculateImportPayment();
+                    return;
+                }
+                string clean = value.Replace(",", "").Replace(".", "").Trim();
+                if (decimal.TryParse(clean, out decimal parsed))
+                {
+                    if (SetProperty(ref _paidAmountText, parsed.ToString("N0")))
+                        RecalculateImportPayment();
+                }
+            }
         }
 
-        var product = Products.FirstOrDefault(x =>
-            string.Equals(x.ProductCode, keyword, StringComparison.OrdinalIgnoreCase) ||
-            x.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-
-        if (product == null)
+        public string RawImeiText
         {
-            MessageBoxHelper.Warning("Không tìm thấy sản phẩm phù hợp.");
-            return;
+            get => _rawImeiText;
+            set
+            {
+                if (SetProperty(ref _rawImeiText, value))
+                    RecalculateImportPayment();
+            }
         }
 
-        SelectedProduct = product;
-        ScanMessage = $"Đã chọn sản phẩm: {product.ProductName}. Hãy quét IMEI để nhập đúng sản phẩm này.";
-    }
-
-    private async Task ImportAsync()
-    {
-        if (SelectedProduct == null || SelectedSupplier == null)
+        public decimal TotalAmount
         {
-            MessageBoxHelper.Warning("Vui lòng chọn sản phẩm và nhà cung cấp.");
-            return;
+            get => _totalAmount;
+            set => SetProperty(ref _totalAmount, value);
         }
 
-        var unitPrice = MoneyHelper.ParseVnd(UnitPriceText);
-        var paidAmount = MoneyHelper.ParseVnd(PaidAmountText);
-        if (unitPrice <= 0)
+        public decimal RemainingDebtAmount
         {
-            MessageBoxHelper.Warning("Vui lòng nhập đơn giá nhập hợp lệ.");
-            return;
+            get => _remainingDebtAmount;
+            set => SetProperty(ref _remainingDebtAmount, value);
         }
 
-        var imeis = ImeiHelper.ParseImeiList(ImeiText);
-        if (imeis.Count == 0)
+        public string NoteText
         {
-            MessageBoxHelper.Warning("Vui lòng nhập hoặc quét danh sách IMEI.");
-            return;
+            get => _noteText;
+            set => SetProperty(ref _noteText, value);
         }
 
-        var invalidImeis = imeis.Where(x => !ImeiHelper.IsValid(x)).ToList();
-        if (invalidImeis.Count > 0)
+        public ICommand ImportCommand { get; }
+        public ICommand RefreshCommand { get; }
+
+        public ImportStockViewModel()
         {
-            MessageBoxHelper.Warning("Có IMEI không hợp lệ: " + string.Join(", ", invalidImeis));
-            return;
+            ImportCommand = new AsyncRelayCommand(ExecuteImportAsync);
+            RefreshCommand = new AsyncRelayCommand(LoadDataAsync);
+            _ = LoadDataAsync();
         }
 
-        var duplicateInText = imeis.GroupBy(x => x).Where(x => x.Count() > 1).Select(x => x.Key).ToList();
-        if (duplicateInText.Count > 0)
+        private async Task LoadDataAsync()
         {
-            MessageBoxHelper.Warning("Danh sách nhập bị trùng IMEI: " + string.Join(", ", duplicateInText));
-            return;
+            Products.Clear();
+            Suppliers.Clear();
+
+            var allProducts = await _productService.GetAllAsync();
+            foreach (var item in allProducts) Products.Add(item);
+
+            var allSuppliers = await _partnerService.GetSuppliersAsync();
+            foreach (var item in allSuppliers) Suppliers.Add(item);
         }
 
-        var existingImeis = await _imeiService.GetExistingImeisAsync(imeis);
-        if (existingImeis.Count > 0)
+        private void RecalculateImportPayment()
         {
-            MessageBoxHelper.Warning("Các IMEI đã tồn tại, không thể nhập trùng: " + string.Join(", ", existingImeis));
-            return;
+            var imeis = RawImeiText.Split(new[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(x => x.Trim())
+                                  .Where(x => x.Length >= 10)
+                                  .ToList();
+
+            int quantity = imeis.Count;
+            if (quantity == 0)
+            {
+                TotalAmount = 0; RemainingDebtAmount = 0;
+                return;
+            }
+
+            decimal unitPrice = decimal.Parse(string.IsNullOrWhiteSpace(UnitPriceText) ? "0" : UnitPriceText.Replace(",", "").Replace(".", ""));
+            decimal paidAmount = decimal.Parse(string.IsNullOrWhiteSpace(PaidAmountText) ? "0" : PaidAmountText.Replace(",", "").Replace(".", ""));
+
+            TotalAmount = unitPrice * quantity;
+            RemainingDebtAmount = TotalAmount > paidAmount ? TotalAmount - paidAmount : 0;
         }
 
-        var request = new ImportStockRequestDto
+        private async Task ExecuteImportAsync()
         {
-            BillId = BillCodeGenerator.GenerateImportCode(DateTime.Now.Second + 1),
-            ObjectId = SelectedSupplier.Id,
-            UserId = 1,
-            ProductId = SelectedProduct.Id,
-            UnitPrice = unitPrice,
-            TotalAmount = unitPrice * imeis.Count,
-            PaidAmount = paidAmount,
-            Note = Note,
-            ImeiList = imeis
-        };
+            if (SelectedProduct == null || SelectedSupplier == null)
+            {
+                MessageBoxHelper.Warning("Vui lòng chọn đầy đủ Nhà cung cấp đối tác và Sản phẩm cần nhập.");
+                return;
+            }
 
-        var result = await _stockService.ImportStockAsync(request);
-        if (result == "SUCCESS")
-        {
-            MessageBoxHelper.Info("Nhập kho thành công.");
-            ImeiText = string.Empty;
-            BarcodeText = string.Empty;
-            PaidAmountText = string.Empty;
-            ScanMessage = "Nhập kho thành công. Có thể tiếp tục quét lô mới.";
+            var imeis = RawImeiText.Split(new[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(x => x.Trim())
+                                  .Where(x => x.Length >= 10)
+                                  .ToList();
+
+            if (imeis.Count == 0)
+            {
+                MessageBoxHelper.Warning("Danh sách nhập trống hoặc các mã IMEI độ dài nhỏ hơn 10 ký tự!");
+                return;
+            }
+
+            decimal cleanUnitPrice = decimal.Parse(string.IsNullOrWhiteSpace(UnitPriceText) ? "0" : UnitPriceText.Replace(",", "").Replace(".", ""));
+            decimal cleanPaidAmount = decimal.Parse(string.IsNullOrWhiteSpace(PaidAmountText) ? "0" : PaidAmountText.Replace(",", "").Replace(".", ""));
+
+            var request = new ImportStockRequestDto
+            {
+                BillId = "HDN" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+                ObjectId = SelectedSupplier.Id,
+                UserId = 1,
+                ProductId = SelectedProduct.Id,
+                UnitPrice = cleanUnitPrice,
+                TotalAmount = TotalAmount,
+                PaidAmount = cleanPaidAmount,
+                Note = NoteText,
+                ImeiList = imeis 
+            };
+
+            var result = await _stockService.ImportStockAsync(request);
+            if (result == "SUCCESS")
+            {
+                MessageBoxHelper.Info("Nhập hàng thành công! Tồn kho và công nợ nhà cung cấp đã được tự động hạch toán.");
+                RawImeiText = string.Empty;
+                PaidAmountText = string.Empty;
+                NoteText = string.Empty;
+                RecalculateImportPayment();
+                await LoadDataAsync();
+            }
+            else
+            {
+                MessageBoxHelper.Warning($"Lỗi nghiệp vụ hệ thống: {result}");
+            }
         }
-        else
-        {
-            MessageBoxHelper.Warning(result);
-        }
-    }
-
-    private void SelectProduct(int productId)
-    {
-        SelectedProduct = Products.FirstOrDefault(x => x.Id == productId);
-    }
-
-    private static string AppendImei(string currentText, string imei)
-    {
-        var list = ImeiHelper.ParseImeiList(currentText);
-        if (!list.Contains(imei))
-            list.Add(imei);
-
-        return string.Join(Environment.NewLine, list);
-    }
-
-    private void RefreshMoneySummary()
-    {
-        OnPropertyChanged(nameof(ImeiQuantity));
-        OnPropertyChanged(nameof(TotalAmount));
-        OnPropertyChanged(nameof(RemainingSupplierDebt));
-        OnPropertyChanged(nameof(QuantityText));
-        OnPropertyChanged(nameof(TotalAmountText));
-        OnPropertyChanged(nameof(RemainingSupplierDebtText));
-        OnPropertyChanged(nameof(PaymentStatusText));
     }
 }

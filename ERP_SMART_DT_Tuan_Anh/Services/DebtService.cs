@@ -35,4 +35,17 @@ public class DebtService
 
         return result.FirstOrDefault() ?? "SUCCESS";
     }
+
+    // Backwards-compatible wrapper used by ViewModels
+    public async Task<string> ExecutePayDebtAsync(int objectId, decimal amount, string? note)
+    {
+        var dto = new DebtPaymentRequestDto
+        {
+            ObjectId = objectId,
+            Amount = amount,
+            Note = note
+        };
+
+        return await PayDebtAsync(dto);
+    }
 }

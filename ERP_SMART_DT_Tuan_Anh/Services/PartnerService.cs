@@ -26,6 +26,17 @@ public class PartnerService
             .ToListAsync();
     }
 
+    public async Task<List<Partner>> GetAllPartnersWithDebtAsync()
+    {
+        await using var db = DbContextFactory.Create();
+
+        // Return partners that currently have any debt recorded (TotalDebt > 0)
+        return await db.Partners
+            .Where(x => !x.IsDeleted && x.TotalDebt > 0)
+            .OrderBy(x => x.FullName)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Partner partner)
     {
         await using var db = DbContextFactory.Create();

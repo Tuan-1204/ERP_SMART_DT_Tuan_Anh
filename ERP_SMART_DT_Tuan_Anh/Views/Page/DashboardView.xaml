@@ -1,98 +1,176 @@
 ﻿<UserControl x:Class="ERP_SMART_DT_Tuan_Anh.Views.Page.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel>
-            <TextBlock Text="Tổng quan hệ thống"
-                       FontSize="26"
-                       FontWeight="Bold"
-                       Margin="0,0,0,16"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:ERP_SMART_DT_Tuan_Anh.Converters"
+             mc:Ignorable="d" d:DesignHeight="768" d:DesignWidth="1152">
 
-            <UniformGrid Columns="4">
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Summary.TotalRevenue, StringFormat={}{0:N0} VND}"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource PrimaryBrush}"/>
-                        <TextBlock Text="Tổng doanh thu" FontSize="16"/>
-                    </StackPanel>
-                </Border>
+    <UserControl.Resources>
+        <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
 
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Summary.TotalImport, StringFormat={}{0:N0} VND}"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource AccentBrush}"/>
-                        <TextBlock Text="Tổng tiền nhập" FontSize="16"/>
-                    </StackPanel>
-                </Border>
+    <Grid Background="#F8FAFC">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Border Padding="24">
+                <StackPanel>
 
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Summary.TotalStock}"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource SuccessBrush}"/>
-                        <TextBlock Text="Thiết bị trong kho" FontSize="16"/>
-                    </StackPanel>
-                </Border>
+                    <Grid Margin="0,0,0,24">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Summary.LowStockCount}"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource DangerBrush}"/>
-                        <TextBlock Text="Sản phẩm tồn thấp" FontSize="16"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Tổng Quan Hệ Thống" FontSize="26" FontWeight="Bold" Foreground="#0F172A"/>
+                            <TextBlock Text="Báo cáo phân tích dữ liệu hoạt động kho thời gian thực" FontSize="13" Foreground="#64748B" Margin="0,4,0,0"/>
+                        </StackPanel>
 
-            <Grid Margin="0,18,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="🔄 Làm mới" Command="{Binding LoadDataCommand}" Background="White" Foreground="#334155" BorderBrush="#CBD5E1" FontWeight="SemiBold" Padding="14,8" Margin="0,0,8,0" Cursor="Hand"/>
+                            <Button Content="+ Nhập Kho Hàng" Background="#2563EB" Foreground="White" FontWeight="SemiBold" Padding="14,8" BorderThickness="0" Cursor="Hand"/>
+                        </StackPanel>
+                    </Grid>
 
-                <Border Grid.Column="0" Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Sản phẩm bán chạy"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Margin="0,0,0,12"/>
+                    <UniformGrid Columns="4" Margin="0,0,0,16">
+                        <Border Background="White" CornerRadius="12" Padding="16" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel>
+                                <TextBlock Text="TỔNG DOANH THU" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalRevenue, StringFormat={}{0:N0} đ}" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,8,0,0"/>
+                                <Border Background="#E6F4EA" HorizontalAlignment="Left" CornerRadius="4" Padding="6,2" Margin="0,8,0,0">
+                                    <TextBlock Text="Tích lũy từ đơn xuất bán" FontSize="11" Foreground="#137333" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
 
-                        <DataGrid ItemsSource="{Binding Summary.TopSellingProducts}"
-                                  Style="{StaticResource AppDataGridStyle}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName}" Width="*"/>
-                                <DataGridTextColumn Header="Đã bán" Binding="{Binding SoldCount}" Width="100"/>
-                                <DataGridTextColumn Header="Doanh thu" Binding="{Binding TotalAmount, StringFormat={}{0:N0} VND}" Width="150"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
-                </Border>
+                        <Border Background="White" CornerRadius="12" Padding="16" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel>
+                                <TextBlock Text="TỔNG TIỀN NHẬP" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalImport, StringFormat={}{0:N0} đ}" FontSize="22" FontWeight="Bold" Foreground="#0F172A" Margin="0,8,0,0"/>
+                                <Border Background="#F1F3F4" HorizontalAlignment="Left" CornerRadius="4" Padding="6,2" Margin="0,8,0,0">
+                                    <TextBlock Text="Vốn luân chuyển hàng hóa" FontSize="11" Foreground="#3C4043" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
 
-                <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Cảnh báo tồn kho"
-                                   FontSize="22"
-                                   FontWeight="Bold"
-                                   Margin="0,0,0,12"/>
+                        <Border Background="White" CornerRadius="12" Padding="16" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel>
+                                <TextBlock Text="THIẾT BỊ TRONG KHO" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalStock, StringFormat={}{0:N0}}" FontSize="22" FontWeight="Bold" Foreground="#2563EB" Margin="0,8,0,0"/>
+                                <Border Background="#E8F0FE" HorizontalAlignment="Left" CornerRadius="4" Padding="6,2" Margin="0,8,0,0">
+                                    <TextBlock Text="IMEI đang sẵn sàng bán" FontSize="11" Foreground="#1A73E8" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
 
-                        <DataGrid ItemsSource="{Binding Summary.InventoryAlerts}"
-                                  Style="{StaticResource AppDataGridStyle}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Mã" Binding="{Binding ProductCode}" Width="120"/>
-                                <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName}" Width="*"/>
-                                <DataGridTextColumn Header="Tồn" Binding="{Binding CurrentStock}" Width="80"/>
-                                <DataGridTextColumn Header="Tối thiểu" Binding="{Binding MinStock}" Width="90"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
-                </Border>
-            </Grid>
-        </StackPanel>
-    </ScrollViewer>
+                        <Border Background="White" CornerRadius="12" Padding="16" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel>
+                                <TextBlock Text="NỢ NHÀ CUNG CẤP" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalDebtToSupplier, StringFormat={}{0:N0} đ}" FontSize="22" FontWeight="Bold" Foreground="#DC2626" Margin="0,8,0,0"/>
+                                <Border Background="#FCE8E6" HorizontalAlignment="Left" CornerRadius="4" Padding="6,2" Margin="0,8,0,0">
+                                    <TextBlock Text="Yêu cầu đối soát chi trả" FontSize="11" Foreground="#C5221F" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <UniformGrid Columns="4" Margin="0,0,0,24">
+                        <Border Background="White" CornerRadius="8" Padding="12" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Sản phẩm đang kinh doanh" FontSize="12" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalProduct, StringFormat={}{0} mã dòng máy}" FontSize="15" FontWeight="Bold" Foreground="#334155" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="8" Padding="12" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Khách hàng hệ thống" FontSize="12" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalCustomer, StringFormat={}{0} đối tác}" FontSize="15" FontWeight="Bold" Foreground="#334155" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="White" CornerRadius="8" Padding="12" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Nhà cung cấp chính thức" FontSize="12" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding Summary.TotalSupplier, StringFormat={}{0} nhà phân phối}" FontSize="15" FontWeight="Bold" Foreground="#334155" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border CornerRadius="8" Padding="12" Margin="4" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Summary.LowStockCount, Converter={StaticResource GreaterThanZeroConverter}}" Value="True">
+                                            <Setter Property="Background" Value="#FEF2F2"/>
+                                            <Setter Property="BorderBrush" Value="#FCA5A5"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Mặt hàng chạm định mức thấp" FontSize="12" Foreground="#64748B"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="{Binding Summary.LowStockCount}" FontSize="16" FontWeight="Bold" Foreground="#EF4444"/>
+                                    <TextBlock Text=" sản phẩm cần nhập thêm" FontSize="12" Foreground="#EF4444" VerticalAlignment="Bottom" Margin="4,0,0,1"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4*"/>
+                            <ColumnDefinition Width="5*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="16" Margin="0,0,8,0" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel>
+                                <TextBlock Text="🔥 Top 5 Sản Phẩm Bán Chạy" FontSize="15" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,12"/>
+                                <DataGrid ItemsSource="{Binding Summary.TopSellingProducts}"
+                                          AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="None"
+                                          Background="Transparent" BorderThickness="0" RowHeight="38">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Tên Sản Phẩm" Binding="{Binding ProductName}" Width="*"/>
+                                        <DataGridTextColumn Header="Số Lượng Bán" Binding="{Binding SoldCount}" Width="110">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="16" Margin="8,0,0,0" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <StackPanel>
+                                <TextBlock Text="⚠️ Chi Tiết Sản Phẩm Dưới Định Mức Thấp" FontSize="15" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,0,12"/>
+                                <DataGrid ItemsSource="{Binding Summary.InventoryAlerts}"
+                                          AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="None"
+                                          Background="Transparent" BorderThickness="0" RowHeight="36">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Mã Hàng" Binding="{Binding ProductCode}" Width="100"/>
+                                        <DataGridTextColumn Header="Tên Hàng" Binding="{Binding ProductName}" Width="*"/>
+                                        <DataGridTextColumn Header="Tồn Hiện Tại" Binding="{Binding CurrentStock}" Width="90"/>
+                                        <DataGridTextColumn Header="Định Mức Nhỏ Nhất" Binding="{Binding MinStock}" Width="120"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <Grid Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="180" Height="4" Foreground="#2563EB"/>
+                <TextBlock Text="Đang tải dữ liệu thời gian thực..." Margin="0,8,0,0" Foreground="#2563EB" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
 </UserControl>

@@ -1,111 +1,123 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using ERP_SMART_DT_Tuan_Anh.Commands;
-using ERP_SMART_DT_Tuan_Anh.DTOs;
+using CommunityToolkit.Mvvm.Input;
 using ERP_SMART_DT_Tuan_Anh.Helpers;
 using ERP_SMART_DT_Tuan_Anh.Models;
 using ERP_SMART_DT_Tuan_Anh.Services;
 
-namespace ERP_SMART_DT_Tuan_Anh.ViewModels;
-
-public class DebtViewModel : BaseViewModel
+namespace ERP_SMART_DT_Tuan_Anh.ViewModels
 {
-    private readonly PartnerService _partnerService = new();
-    private readonly DebtService _debtService = new();
-
-    public ObservableCollection<Partner> Partners { get; } = new();
-    public ObservableCollection<DebtTransaction> Transactions { get; } = new();
-
-    private Partner? _selectedPartner;
-    private decimal _paymentAmount;
-    private string _note = string.Empty;
-
-    public Partner? SelectedPartner
+    public class DebtViewModel : BaseViewModel
     {
-        get => _selectedPartner;
-        set
+        private readonly PartnerService _partnerService = new();
+        private readonly DebtService _debtService = new();
+
+        public ObservableCollection<Partner> DebtorsList { get; } = new();
+
+        private Partner? _selectedPartner;
+        private string _paymentAmountText = string.Empty;
+        private string _transactionNote = string.Empty;
+
+        public Partner? SelectedPartner
         {
-            if (SetProperty(ref _selectedPartner, value))
-                _ = LoadTransactionsAsync();
-        }
-    }
-
-    public decimal PaymentAmount
-    {
-        get => _paymentAmount;
-        set => SetProperty(ref _paymentAmount, value);
-    }
-
-    public string Note
-    {
-        get => _note;
-        set => SetProperty(ref _note, value);
-    }
-
-    public ICommand PayDebtCommand { get; }
-    public ICommand LoadCommand { get; }
-
-    public DebtViewModel()
-    {
-        PayDebtCommand = new AsyncRelayCommand(_ => PayDebtAsync());
-        LoadCommand = new AsyncRelayCommand(_ => LoadAsync());
-        _ = LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        Partners.Clear();
-
-        foreach (var item in await _partnerService.GetCustomersAsync())
-            Partners.Add(item);
-
-        foreach (var item in await _partnerService.GetSuppliersAsync())
-            Partners.Add(item);
-    }
-
-    private async Task LoadTransactionsAsync()
-    {
-        Transactions.Clear();
-
-        if (SelectedPartner == null)
-            return;
-
-        foreach (var item in await _debtService.GetDebtTransactionsAsync(SelectedPartner.Id))
-            Transactions.Add(item);
-    }
-
-    private async Task PayDebtAsync()
-    {
-        if (SelectedPartner == null)
-        {
-            MessageBoxHelper.Warning("Vui lòng chọn đối tác.");
-            return;
+            get => _selectedPartner;
+            set => SetProperty(ref _selectedPartner, value);
         }
 
-        if (PaymentAmount <= 0)
+        public string PaymentAmountText
         {
-            MessageBoxHelper.Warning("Số tiền thanh toán phải lớn hơn 0.");
-            return;
+            get => _paymentAmountText;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    SetProperty(ref _paymentAmountText, value);
+                    return;
+                }
+                string clean = value.Replace(",", "").Replace(".", "").Trim();
+                if (decimal.TryParse(clean, out decimal parsed))
+                {
+                    SetProperty(ref _paymentAmountText, parsed.ToString("N0"));
+                }
+            }
         }
 
-        var result = await _debtService.PayDebtAsync(new DebtPaymentRequestDto
+        public string TransactionNote
         {
-            ObjectId = SelectedPartner.Id,
-            Amount = PaymentAmount,
-            Note = Note
-        });
-
-        if (result == "SUCCESS")
-        {
-            MessageBoxHelper.Info("Thanh toán công nợ thành công.");
-            PaymentAmount = 0;
-            Note = string.Empty;
-            await LoadAsync();
-            await LoadTransactionsAsync();
+            get => _transactionNote;
+            set => SetProperty(ref _transactionNote, value);
         }
-        else
+
+        public ICommand LoadCommand { get; }
+        public ICommand PayDebtCommand { get; }
+
+        public DebtViewModel()
         {
-            MessageBoxHelper.Warning(result);
+            LoadCommand = new AsyncRelayCommand(LoadDebtorsAsync);
+            PayDebtCommand = new AsyncRelayCommand(ProcessDebtPaymentAsync);
+            _ = LoadDebtorsAsync();
+        }
+
+        private async Task LoadDebtorsAsync()
+        {
+            if (IsBusy) return;
+            try
+            {
+                IsBusy = true;
+                DebtorsList.Clear();
+                var list = await _partnerService.GetAllPartnersWithDebtAsync();
+                foreach (var partner in list)
+                {
+                    DebtorsList.Add(partner);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Lỗi tải dữ liệu công nợ: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task ProcessDebtPaymentAsync()
+        {
+            if (SelectedPartner == null)
+            {
+                MessageBoxHelper.Warning("Vui lòng chọn đối tác cần thu/trả nợ.");
+                return;
+            }
+
+            decimal amount = decimal.Parse(string.IsNullOrWhiteSpace(PaymentAmountText) ? "0" : PaymentAmountText.Replace(",", "").Replace(".", ""));
+            if (amount <= 0 || amount > SelectedPartner.TotalDebt)
+            {
+                MessageBoxHelper.Warning("Số tiền thanh toán phải lớn hơn 0 và nhỏ hơn tổng dư nợ hiện tại.");
+                return;
+            }
+
+            try
+            {
+                var result = await _debtService.ExecutePayDebtAsync(SelectedPartner.Id, amount, TransactionNote);
+                if (result == "SUCCESS")
+                {
+                    MessageBoxHelper.Info("Đã lập chứng từ và tất toán số dư nợ thành công!");
+                    PaymentAmountText = string.Empty;
+                    TransactionNote = string.Empty;
+                    SelectedPartner = null;
+                    await LoadDebtorsAsync();
+                }
+                else
+                {
+                    MessageBoxHelper.Warning(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBoxHelper.Error("Sự cố hệ thống: " + ex.Message);
+            }
         }
     }
 }

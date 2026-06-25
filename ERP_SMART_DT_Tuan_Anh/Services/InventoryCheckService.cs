@@ -67,6 +67,27 @@ public class InventoryCheckService
         await transaction.CommitAsync();
     }
 
+    public async Task<bool> CreateCheckSheetAsync(DTOs.InventoryCheckMasterDto master)
+    {
+        if (master == null) return false;
+
+        var check = new InventoryCheck
+        {
+            UserId = master.UserId,
+            Note = master.Note
+        };
+
+        var details = master.Details.Select(d => new InventoryCheckDetail
+        {
+            ProductId = d.ProductId,
+            SystemStock = d.SystemStock,
+            ActualStock = d.ActualStock
+        }).ToList();
+
+        await AddWithDetailsAsync(check, details);
+        return true;
+    }
+
     public async Task HardDeleteAsync(int checkId)
     {
         await using var db = DbContextFactory.Create();

@@ -17,7 +17,7 @@ public class SettingService
     {
         await using var db = DbContextFactory.Create();
 
-        var entity = await db.Settings.FirstOrDefaultAsync();
+        var entity = await db.Settings.FirstOrDefaultAsync(); 
 
         if (entity == null)
         {
