@@ -1,211 +1,241 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using ERP_SMART_DT_Tuan_Anh.Commands;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ERP_SMART_DT_Tuan_Anh.Helpers;
 using ERP_SMART_DT_Tuan_Anh.Models;
 using ERP_SMART_DT_Tuan_Anh.Services;
 
-namespace ERP_SMART_DT_Tuan_Anh.ViewModels;
-
-public class ProductViewModel : BaseViewModel
+namespace ERP_SMART_DT_Tuan_Anh.ViewModels
 {
-    private readonly ProductService _productService = new();
-    private readonly CategoryService _categoryService = new();
-
-    private Product _currentProduct = CreateDefaultProduct();
-    private Product? _selectedProduct;
-    private string _formTitle = "Thêm sản phẩm mới";
-
-    public ObservableCollection<Product> Products { get; } = new();
-    public ObservableCollection<Category> Categories { get; } = new();
-
-    public Product CurrentProduct
+    public class ProductViewModel : BaseViewModel
     {
-        get => _currentProduct;
-        set => SetProperty(ref _currentProduct, value);
-    }
+        private readonly ProductService _productService = new();
+        private readonly CategoryService _categoryService = new();
 
-    public Product? SelectedProduct
-    {
-        get => _selectedProduct;
-        set
+        private Product? _selectedProduct;
+        private Product _currentProduct = new();
+        private string _formTitle = "Thêm sản phẩm mới";
+
+        private string _filterMinPriceText = string.Empty;
+        private string _filterMaxPriceText = string.Empty;
+        private int _selectedSortIndex = 0;
+
+        public ObservableCollection<Product> Products { get; } = new();
+        public ObservableCollection<Product> FilteredProducts { get; } = new();
+        public ObservableCollection<Category> Categories { get; } = new();
+
+        public Product? SelectedProduct
         {
-            if (SetProperty(ref _selectedProduct, value) && value != null)
+            get => _selectedProduct;
+            set
             {
-                CurrentProduct = CloneProduct(value);
-                FormTitle = "Sửa sản phẩm";
+                if (SetProperty(ref _selectedProduct, value) && value != null)
+                {
+                    // ĐÃ FIX: Khởi tạo giá trị gán thủ công thay thế cho hàm value.Clone() lỗi context
+                    CurrentProduct = new Product
+                    {
+                        Id = value.Id,
+                        ProductCode = value.ProductCode,
+                        ProductName = value.ProductName,
+                        CategoryId = value.CategoryId,
+                        ImportPrice = value.ImportPrice,
+                        ExportPrice = value.ExportPrice,
+                        MinStock = value.MinStock,
+                        AlertThreshold = value.AlertThreshold,
+                        Unit = value.Unit,
+                        CurrentStock = value.CurrentStock,
+                        IsDeleted = value.IsDeleted,
+                        CreatedDate = value.CreatedDate
+                    };
+                    FormTitle = "Cập nhật sản phẩm";
+                }
             }
         }
-    }
 
-    public string FormTitle
-    {
-        get => _formTitle;
-        set => SetProperty(ref _formTitle, value);
-    }
-
-    public ICommand LoadCommand { get; }
-    public ICommand NewCommand { get; }
-    public ICommand SaveCommand { get; }
-    public ICommand DeleteCommand { get; }
-
-    public ProductViewModel()
-    {
-        LoadCommand = new AsyncRelayCommand(_ => LoadAsync());
-        SaveCommand = new AsyncRelayCommand(_ => SaveAsync());
-        DeleteCommand = new AsyncRelayCommand(_ => DeleteAsync());
-        NewCommand = new RelayCommand(_ => ResetForm());
-
-        _ = LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        Products.Clear();
-        Categories.Clear();
-
-        foreach (var item in await _categoryService.GetAllAsync())
-            Categories.Add(item);
-
-        foreach (var item in await _productService.GetAllAsync())
-            Products.Add(item);
-    }
-
-    private async Task SaveAsync()
-    {
-        NormalizeCurrentProduct();
-
-        var validationMessage = ValidateProduct(CurrentProduct);
-        if (!string.IsNullOrWhiteSpace(validationMessage))
+        public Product CurrentProduct
         {
-            MessageBoxHelper.Warning(validationMessage);
-            return;
+            get => _currentProduct;
+            set => SetProperty(ref _currentProduct, value);
         }
 
-        if (await _productService.IsProductCodeExistsAsync(CurrentProduct.ProductCode, CurrentProduct.Id))
+        public string FormTitle
         {
-            MessageBoxHelper.Warning("Mã sản phẩm đã tồn tại. Vui lòng nhập mã khác.");
-            return;
+            get => _formTitle;
+            set => SetProperty(ref _formTitle, value);
         }
 
-        if (CurrentProduct.Id == 0)
+        public string FilterMinPriceText
         {
-            CurrentProduct.CreatedBy = "SYSTEM";
-            await _productService.AddAsync(CurrentProduct);
-            MessageBoxHelper.Info("Thêm sản phẩm thành công.");
-        }
-        else
-        {
-            CurrentProduct.UpdatedBy = "SYSTEM";
-            await _productService.UpdateAsync(CurrentProduct);
-            MessageBoxHelper.Info("Cập nhật sản phẩm thành công.");
+            get => _filterMinPriceText;
+            set { if (SetProperty(ref _filterMinPriceText, value)) ApplyPriceFilter(); }
         }
 
-        await LoadAsync();
-        ResetForm();
-    }
-
-    private async Task DeleteAsync()
-    {
-        if (CurrentProduct.Id == 0)
+        public string FilterMaxPriceText
         {
-            MessageBoxHelper.Warning("Vui lòng chọn sản phẩm cần xóa.");
-            return;
+            get => _filterMaxPriceText;
+            set { if (SetProperty(ref _filterMaxPriceText, value)) ApplyPriceFilter(); }
         }
 
-        if (!MessageBoxHelper.Confirm($"Bạn có chắc muốn xóa hẳn sản phẩm \"{CurrentProduct.ProductName}\"? Thao tác này không thể hoàn tác."))
-            return;
-
-        var result = await _productService.HardDeleteAsync(CurrentProduct.Id);
-        if (result != "SUCCESS")
+        public int SelectedSortIndex
         {
-            MessageBoxHelper.Warning(result);
-            return;
+            get => _selectedSortIndex;
+            set { if (SetProperty(ref _selectedSortIndex, value)) ApplyPriceFilter(); }
         }
 
-        MessageBoxHelper.Info("Xóa hẳn sản phẩm thành công.");
+        public ICommand LoadCommand { get; }
+        public ICommand NewCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand DeleteCommand { get; }
+        public ICommand ClearFilterCommand { get; }
 
-        await LoadAsync();
-        ResetForm();
-    }
-
-    private void ResetForm()
-    {
-        SelectedProduct = null;
-        CurrentProduct = CreateDefaultProduct();
-        FormTitle = "Thêm sản phẩm mới";
-    }
-
-    private void NormalizeCurrentProduct()
-    {
-        CurrentProduct.ProductCode = CurrentProduct.ProductCode.Trim();
-        CurrentProduct.ProductName = CurrentProduct.ProductName.Trim();
-        CurrentProduct.Unit = string.IsNullOrWhiteSpace(CurrentProduct.Unit)
-            ? "Chiếc"
-            : CurrentProduct.Unit.Trim();
-    }
-
-    private static string ValidateProduct(Product product)
-    {
-        if (string.IsNullOrWhiteSpace(product.ProductCode))
-            return "Vui lòng nhập mã sản phẩm.";
-
-        if (string.IsNullOrWhiteSpace(product.ProductName))
-            return "Vui lòng nhập tên sản phẩm.";
-
-        if (product.CategoryId == null || product.CategoryId <= 0)
-            return "Vui lòng chọn danh mục sản phẩm.";
-
-        if (product.ImportPrice < 0)
-            return "Giá nhập không được âm.";
-
-        if (product.ExportPrice < 0)
-            return "Giá bán không được âm.";
-
-        if (product.ExportPrice > 0 && product.ImportPrice > product.ExportPrice)
-            return "Giá nhập đang lớn hơn giá bán. Vui lòng kiểm tra lại.";
-
-        if (product.MinStock < 0)
-            return "Tồn tối thiểu không được âm.";
-
-        if (product.AlertThreshold < 0)
-            return "Ngưỡng cảnh báo không được âm.";
-
-        return string.Empty;
-    }
-
-    private static Product CreateDefaultProduct()
-    {
-        return new Product
+        public ProductViewModel()
         {
-            MinStock = 5,
-            AlertThreshold = 10,
-            Unit = "Chiếc",
-            ImportPrice = 0,
-            ExportPrice = 0
-        };
-    }
+            LoadCommand = new AsyncRelayCommand(LoadAsync);
+            NewCommand = new RelayCommand(ExecuteNew);
+            SaveCommand = new AsyncRelayCommand(ExecuteSaveAsync);
+            DeleteCommand = new AsyncRelayCommand(ExecuteDeleteAsync);
+            ClearFilterCommand = new RelayCommand(ExecuteClearFilter);
 
-    private static Product CloneProduct(Product source)
-    {
-        return new Product
+            _ = LoadAsync();
+        }
+
+        private async Task LoadAsync()
         {
-            Id = source.Id,
-            CategoryId = source.CategoryId,
-            ProductCode = source.ProductCode,
-            ProductName = source.ProductName,
-            ImportPrice = source.ImportPrice,
-            ExportPrice = source.ExportPrice,
-            CurrentStock = source.CurrentStock,
-            MinStock = source.MinStock,
-            AlertThreshold = source.AlertThreshold,
-            Unit = source.Unit,
-            ProductImage = source.ProductImage,
-            CreatedDate = source.CreatedDate,
-            UpdatedDate = source.UpdatedDate,
-            CreatedBy = source.CreatedBy,
-            UpdatedBy = source.UpdatedBy,
-            IsDeleted = source.IsDeleted
-        };
+            if (IsBusy) return;
+            try
+            {
+                IsBusy = true;
+                Products.Clear();
+                Categories.Clear();
+
+                var cats = await _categoryService.GetAllAsync();
+                foreach (var c in cats) Categories.Add(c);
+
+                var prods = await _productService.GetAllAsync();
+                foreach (var p in prods) Products.Add(p);
+
+                ApplyPriceFilter();
+            }
+            catch (Exception ex)
+            {
+                MessageBoxHelper.Error("Lỗi hệ thống khi tải danh mục: " + ex.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void ApplyPriceFilter()
+        {
+            FilteredProducts.Clear();
+
+            string cleanMin = FilterMinPriceText.Replace(",", "").Replace(".", "").Trim();
+            string cleanMax = FilterMaxPriceText.Replace(",", "").Replace(".", "").Trim();
+
+            decimal.TryParse(cleanMin, out decimal minPrice);
+            if (string.IsNullOrEmpty(cleanMax)) cleanMax = "99999999999";
+            decimal.TryParse(cleanMax, out decimal maxPrice);
+
+            var query = Products.Where(p => p.ExportPrice >= minPrice && p.ExportPrice <= maxPrice);
+
+            switch (SelectedSortIndex)
+            {
+                case 1:
+                    query = query.OrderBy(p => p.ExportPrice);
+                    break;
+                case 2:
+                    query = query.OrderByDescending(p => p.ExportPrice);
+                    break;
+                case 3:
+                    query = query.OrderByDescending(p => p.CreatedDate);
+                    break;
+                case 4:
+                    query = query.OrderBy(p => p.ProductName);
+                    break;
+                default:
+                    query = query.OrderBy(p => p.ProductCode);
+                    break;
+            }
+
+            foreach (var item in query)
+            {
+                FilteredProducts.Add(item);
+            }
+        }
+
+        private void ExecuteClearFilter()
+        {
+            _filterMinPriceText = string.Empty;
+            _filterMaxPriceText = string.Empty;
+            _selectedSortIndex = 0;
+
+            OnPropertyChanged(nameof(FilterMinPriceText));
+            OnPropertyChanged(nameof(FilterMaxPriceText));
+            OnPropertyChanged(nameof(SelectedSortIndex));
+
+            ApplyPriceFilter();
+        }
+
+        private void ExecuteNew()
+        {
+            CurrentProduct = new Product();
+            SelectedProduct = null;
+            FormTitle = "Thêm sản phẩm mới";
+        }
+
+        private async Task ExecuteSaveAsync()
+        {
+            if (string.IsNullOrWhiteSpace(CurrentProduct.ProductCode) || string.IsNullOrWhiteSpace(CurrentProduct.ProductName))
+            {
+                MessageBoxHelper.Warning("Vui lòng nhập đầy đủ thông tin Mã và Tên mặt hàng thiết bị.");
+                return;
+            }
+
+            try
+            {
+                if (CurrentProduct.Id == 0)
+                {
+                    await _productService.AddAsync(CurrentProduct);
+                    MessageBoxHelper.Info("Thêm mới sản phẩm công nghệ thành công!");
+                }
+                else
+                {
+                    await _productService.UpdateAsync(CurrentProduct);
+                    MessageBoxHelper.Info("Cập nhật thông tin sản phẩm thành công!");
+                }
+
+                ExecuteNew();
+                await LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBoxHelper.Error("Lỗi ghi sổ dữ liệu: " + ex.Message);
+            }
+        }
+
+        private async Task ExecuteDeleteAsync()
+        {
+            if (SelectedProduct == null) return;
+
+            if (MessageBoxHelper.Confirm($"Bạn có chắc chắn muốn xóa dòng máy [{SelectedProduct.ProductName}] khỏi hệ thống?"))
+            {
+                try
+                {
+                    await _productService.SoftDeleteAsync(SelectedProduct.Id);
+                    MessageBoxHelper.Info("Đã xóa sản phẩm thành công!");
+                    ExecuteNew();
+                    await LoadAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxHelper.Error("Sự cố xóa dữ liệu: " + ex.Message);
+                }
+            }
+        }
     }
 }

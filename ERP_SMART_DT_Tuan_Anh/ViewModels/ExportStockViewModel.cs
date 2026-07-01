@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ERP_SMART_DT_Tuan_Anh.DTOs;
@@ -28,11 +30,8 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         [ObservableProperty]
         private Partner? selectedCustomer;
 
-        [ObservableProperty]
-        private string unitPriceText = "0";
-
-        [ObservableProperty]
-        private string paidAmountText = "0";
+        private string _unitPriceText = string.Empty;
+        private string _paidAmountText = string.Empty;
 
         [ObservableProperty]
         private decimal totalAmount;
@@ -47,7 +46,7 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         private string barcodeText = string.Empty;
 
         [ObservableProperty]
-        private string scanMessage = "Đang chờ quét Barcode / Mã IMEI...";
+        private string scanMessage = "Đang chờ quét Barcode / Mã IMEI bán hàng...";
 
         [ObservableProperty]
         private int scannedCount;
@@ -58,62 +57,85 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         [ObservableProperty]
         private string? errorMessage;
 
+        // --- PROPERTY ĐƠN GIÁ XUẤT TỰ ĐỘNG PHÂN CHIA TIỀN TỆ ---
+        public string UnitPriceText
+        {
+            get => _unitPriceText;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    if (SetProperty(ref _unitPriceText, string.Empty)) RecalculatePayment();
+                    return;
+                }
+                string clean = value.Replace(",", "").Replace(".", "").Trim();
+                if (decimal.TryParse(clean, out decimal parsed))
+                {
+                    if (SetProperty(ref _unitPriceText, parsed.ToString("N0"))) RecalculatePayment();
+                }
+            }
+        }
+
+        // --- PROPERTY KHÁCH TRẢ TỰ ĐỘNG PHÂN CHIA TIỀN TỆ ---
+        public string PaidAmountText
+        {
+            get => _paidAmountText;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    if (SetProperty(ref _paidAmountText, string.Empty)) RecalculatePayment();
+                    return;
+                }
+                string clean = value.Replace(",", "").Replace(".", "").Trim();
+                if (decimal.TryParse(clean, out decimal parsed))
+                {
+                    if (SetProperty(ref _paidAmountText, parsed.ToString("N0"))) RecalculatePayment();
+                }
+            }
+        }
+
+        // --- HIỂN THỊ SỐ TỒN KHO TRỰC QUAN ---
+        public string ProductStockAvailableText => SelectedProduct != null
+            ? $"[ Số kho khả dụng: {SelectedProduct.CurrentStock} máy còn lại ]"
+            : "[ Vui lòng chọn dòng máy để đối soát số lượng tồn kho ]";
+
         public ExportStockViewModel()
         {
-            PropertyChanged += ExportStockViewModel_PropertyChanged;
             _ = LoadAsync();
         }
 
-        private void ExportStockViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        partial void OnSelectedProductChanged(Product? value)
         {
-            if (e.PropertyName == nameof(SelectedProduct))
+            if (value != null)
             {
-                if (SelectedProduct != null)
-                {
-                    UnitPriceText = SelectedProduct.ExportPrice.ToString("N0");
-                    RecalculatePayment();
-                }
+                UnitPriceText = value.ExportPrice.ToString("N0");
             }
-            else if (e.PropertyName == nameof(UnitPriceText))
+            else
             {
-                if (string.IsNullOrWhiteSpace(UnitPriceText)) return;
-                string clean = UnitPriceText.Replace(",", "").Replace(".", "").Trim();
-                if (decimal.TryParse(clean, out decimal parsed))
-                {
-                    string formatted = parsed.ToString("N0");
-                    if (UnitPriceText != formatted)
-                    {
-                        UnitPriceText = formatted;
-                    }
-                }
-                RecalculatePayment();
+                UnitPriceText = string.Empty;
             }
-            else if (e.PropertyName == nameof(PaidAmountText))
-            {
-                if (string.IsNullOrWhiteSpace(PaidAmountText)) return;
-                string clean = PaidAmountText.Replace(",", "").Replace(".", "").Trim();
-                if (decimal.TryParse(clean, out decimal parsed))
-                {
-                    string formatted = parsed.ToString("N0");
-                    if (PaidAmountText != formatted)
-                    {
-                        PaidAmountText = formatted;
-                    }
-                }
-                RecalculatePayment();
-            }
+            OnPropertyChanged(nameof(ProductStockAvailableText));
+            RecalculatePayment();
         }
 
         private async Task LoadAsync()
         {
-            Products.Clear();
-            Customers.Clear();
+            try
+            {
+                Products.Clear();
+                Customers.Clear();
 
-            var allProducts = await _productService.GetAllAsync();
-            foreach (var item in allProducts) Products.Add(item);
+                var allProducts = await _productService.GetAllAsync();
+                foreach (var item in allProducts) Products.Add(item);
 
-            var allCustomers = await _partnerService.GetCustomersAsync();
-            foreach (var item in allCustomers) Customers.Add(item);
+                var allCustomers = await _partnerService.GetCustomersAsync();
+                foreach (var item in allCustomers) Customers.Add(item);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Lỗi tải danh mục cấu hình: " + ex.Message;
+            }
         }
 
         [RelayCommand]
@@ -122,46 +144,68 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
             var imeiCode = BarcodeText.Trim();
             if (string.IsNullOrWhiteSpace(imeiCode)) return;
 
-            BarcodeText = string.Empty; // Clear ô nhập ngay để chuẩn bị cho lần quét sau
+            BarcodeText = string.Empty;
+
+            if (SelectedProduct == null)
+            {
+                ScanMessage = "⚠️ Hãy chọn dòng sản phẩm trên thiết bị trước khi quét mã nhận diện IMEI.";
+                return;
+            }
+
+            // NGHIỆP VỤ MỚI: Bẫy kiểm soát độ dài IMEI ngay tại Client để chống nổ lỗi Check Constraint DB
+            if (imeiCode.Length < 10)
+            {
+                ScanMessage = $"❌ LỖI ĐỘ DÀI: Mã IMEI [{imeiCode}] quá ngắn ({imeiCode.Length} ký tự). Yêu cầu tối thiểu phải đạt 10 ký tự!";
+                return;
+            }
 
             if (ImeiList.Contains(imeiCode))
             {
-                ScanMessage = $"Mã IMEI {imeiCode} đã nằm trong danh sách xuất!";
+                ScanMessage = $"Mã máy IMEI {imeiCode} đã được quét cho vào giỏ xuất kho!";
                 return;
             }
 
             var imei = await _imeiService.GetByImeiAsync(imeiCode);
+
             if (imei == null)
             {
-                // BYPASS CHO KIỂM THỬ: Nếu IMEI lạ chưa có dưới DB, cho phép tự nhận diện theo sản phẩm ComboBox đang chọn
-                if (SelectedProduct == null)
+                // --- LUỒNG BYPASS SỐ LIỆU CHO PHIÊN BẢN DEMO ĐỒ ÁN ---
+                if (ImeiList.Count >= SelectedProduct.CurrentStock)
                 {
-                    ScanMessage = "Vui lòng chọn dòng Sản phẩm trên ComboBox trước khi quét IMEI mới.";
+                    ScanMessage = $"❌ TỒN KHO KHÔNG ĐỦ: Kho hàng chỉ còn {SelectedProduct.CurrentStock} máy, không thể quét thêm thiết bị thứ {ImeiList.Count + 1}.";
                     return;
                 }
+
                 ImeiList.Add(imeiCode);
                 ScannedCount = ImeiList.Count;
                 RecalculatePayment();
-                ScanMessage = $"Đã nhận diện IMEI mới: {imeiCode}.";
+                ScanMessage = $"📥 Đã nhận diện và thêm IMEI thử nghiệm: {imeiCode} (Theo dòng {SelectedProduct.ProductName}).";
                 return;
             }
 
-            if (!imei.ProductId.HasValue) return;
-
-            if (SelectedProduct == null)
+            // --- LUỒNG KIỂM TRA CHẶT CHẼ TRÊN DỮ LIỆU CSDL GỐC ---
+            if (!imei.ProductId.HasValue || imei.ProductId.Value != SelectedProduct.Id)
             {
-                SelectedProduct = Products.FirstOrDefault(x => x.Id == imei.ProductId.Value);
+                ScanMessage = "❌ LỖI NGHIỆP VỤ: Thiết bị định danh vừa quét không thuộc về dòng sản phẩm đang chọn.";
+                return;
             }
-            else if (SelectedProduct.Id != imei.ProductId.Value)
+
+            if (imei.StatusId == 2)
             {
-                ScanMessage = "Lỗi: IMEI vừa quét không thuộc dòng sản phẩm đang chọn!";
+                ScanMessage = $"❌ LỖI GIAO DỊCH: Thiết bị IMEI [{imeiCode}] đã được xuất bán từ trước!";
+                return;
+            }
+
+            if (ImeiList.Count >= SelectedProduct.CurrentStock)
+            {
+                ScanMessage = $"❌ TỒN KHO KHÔNG ĐỦ: Kho hàng chỉ còn {SelectedProduct.CurrentStock} máy.";
                 return;
             }
 
             ImeiList.Add(imeiCode);
             ScannedCount = ImeiList.Count;
             RecalculatePayment();
-            ScanMessage = $"Đã thêm thành công máy IMEI: {imeiCode}.";
+            ScanMessage = $"📥 Đã quét thành công thiết bị máy IMEI: {imeiCode}.";
         }
 
         [RelayCommand]
@@ -172,7 +216,7 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 ImeiList.Remove(imei);
                 ScannedCount = ImeiList.Count;
                 RecalculatePayment();
-                ScanMessage = $"Đã gỡ máy {imei} khỏi danh sách.";
+                ScanMessage = $"Đã gỡ máy {imei} ra khỏi giỏ hàng hóa xuất kho.";
             }
         }
 
@@ -185,9 +229,11 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 return;
             }
 
-            // Giải mã chuỗi thô loại bỏ dấu phẩy trước khi tính toán số học
-            decimal unitPrice = decimal.Parse(string.IsNullOrWhiteSpace(UnitPriceText) ? "0" : UnitPriceText.Replace(",", "").Replace(".", ""));
-            decimal paidAmount = decimal.Parse(string.IsNullOrWhiteSpace(PaidAmountText) ? "0" : PaidAmountText.Replace(",", "").Replace(".", ""));
+            string cleanPrice = _unitPriceText.Replace(",", "").Replace(".", "").Trim();
+            string cleanPaid = _paidAmountText.Replace(",", "").Replace(".", "").Trim();
+
+            decimal.TryParse(string.IsNullOrEmpty(cleanPrice) ? "0" : cleanPrice, out decimal unitPrice);
+            decimal.TryParse(string.IsNullOrEmpty(cleanPaid) ? "0" : cleanPaid, out decimal paidAmount);
 
             TotalAmount = unitPrice * quantity;
 
@@ -208,13 +254,13 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         {
             if (SelectedProduct == null || SelectedCustomer == null)
             {
-                MessageBoxHelper.Warning("Vui lòng chọn đầy đủ Khách hàng và Sản phẩm dòng máy.");
+                MessageBoxHelper.Warning("Vui lòng chỉ định rõ Khách hàng đối tác và Sản phẩm thiết bị.");
                 return;
             }
 
             if (ImeiList.Count == 0)
             {
-                MessageBoxHelper.Warning("Giỏ hàng xuất kho đang trống! Hãy quét IMEI trước khi lưu phiếu.");
+                MessageBoxHelper.Warning("Giỏ hàng hóa xuất kho đang trống! Vui lòng thực hiện thao tác quét mã vạch.");
                 return;
             }
 
@@ -223,27 +269,15 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 IsBusy = true;
                 ErrorMessage = string.Empty;
 
-                // Normalize and clean IMEI list
-                var cleanedImei = ImeiList
-                    .Select(ImeiHelper.Normalize)
-                    .Where(ImeiHelper.IsValid)
-                    .Distinct()
-                    .ToList();
+                var cleanedImei = ImeiList.Select(x => x.Trim()).Distinct().ToList();
 
-                if (cleanedImei.Count == 0)
-                {
-                    MessageBoxHelper.Warning("Danh sách IMEI sau khi chuẩn hóa rỗng. Kiểm tra lại mã IMEI đã quét.");
-                    return;
-                }
+                string cleanPrice = _unitPriceText.Replace(",", "").Replace(".", "").Trim();
+                string cleanPaid = _paidAmountText.Replace(",", "").Replace(".", "").Trim();
 
-                // Parse prices
-                decimal cleanUnitPrice = decimal.Parse(string.IsNullOrWhiteSpace(UnitPriceText) ? "0" : UnitPriceText.Replace(",", "").Replace(".", ""));
-                decimal cleanPaidAmount = decimal.Parse(string.IsNullOrWhiteSpace(PaidAmountText) ? "0" : PaidAmountText.Replace(",", "").Replace(".", ""));
+                decimal.TryParse(cleanPrice, out decimal cleanUnitPrice);
+                decimal.TryParse(cleanPaid, out decimal cleanPaidAmount);
 
-                // Recalculate totals based on cleaned IMEIs
                 TotalAmount = cleanUnitPrice * cleanedImei.Count;
-
-                // Generate bill id
                 string generatedBillId = "HDX" + DateTime.Now.ToString("yyyyMMddHHmmss");
 
                 var request = new ExportStockRequestDto
@@ -262,26 +296,28 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
 
                 if (result == "SUCCESS")
                 {
-                    MessageBoxHelper.Info("Hệ thống đã phê duyệt chứng từ và lập phiếu xuất kho thành công!");
+                    MessageBoxHelper.Info("Hệ thống đã phê duyệt hạch toán chứng từ và lập phiếu xuất bán hàng thành công!");
 
-                    // Clear UI state
+                    _unitPriceText = string.Empty;
+                    _paidAmountText = string.Empty;
+                    OnPropertyChanged(nameof(UnitPriceText));
+                    OnPropertyChanged(nameof(PaidAmountText));
+
                     ImeiList.Clear();
                     ScannedCount = 0;
-                    UnitPriceText = string.Empty;
-                    PaidAmountText = string.Empty;
                     SelectedProduct = null;
-                    RecalculatePayment();
 
+                    RecalculatePayment();
                     await LoadAsync();
                 }
                 else
                 {
-                    MessageBoxHelper.Warning($"Lỗi chặn từ nghiệp vụ Database: {result}");
+                    MessageBoxHelper.Warning($"Lỗi nghiệp vụ từ mã Database: {result}");
                 }
             }
             catch (Exception ex)
             {
-                MessageBoxHelper.Error("Lỗi kết nối đồng bộ luồng xuất kho: " + ex.Message);
+                MessageBoxHelper.Error("Lỗi kết nối hạch toán luồng xuất kho: " + ex.Message);
             }
             finally
             {

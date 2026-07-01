@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -24,10 +26,11 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         private Partner? _selectedSupplier;
         private string _unitPriceText = string.Empty;
         private string _paidAmountText = string.Empty;
-        private string _rawImeiText = string.Empty;
+        private string _imeiText = string.Empty;
         private decimal _totalAmount;
         private decimal _remainingDebtAmount;
         private string _noteText = string.Empty;
+        private string _productSearchText = string.Empty;
 
         public Product? SelectedProduct
         {
@@ -55,15 +58,14 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
             {
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    SetProperty(ref _unitPriceText, value);
-                    RecalculateImportPayment();
+                    if (SetProperty(ref _unitPriceText, string.Empty)) RecalculateImportPayment();
                     return;
                 }
+
                 string clean = value.Replace(",", "").Replace(".", "").Trim();
                 if (decimal.TryParse(clean, out decimal parsed))
                 {
-                    if (SetProperty(ref _unitPriceText, parsed.ToString("N0")))
-                        RecalculateImportPayment();
+                    if (SetProperty(ref _unitPriceText, parsed.ToString("N0"))) RecalculateImportPayment();
                 }
             }
         }
@@ -75,39 +77,28 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
             {
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    SetProperty(ref _paidAmountText, value);
-                    RecalculateImportPayment();
+                    if (SetProperty(ref _paidAmountText, string.Empty)) RecalculateImportPayment();
                     return;
                 }
+
                 string clean = value.Replace(",", "").Replace(".", "").Trim();
                 if (decimal.TryParse(clean, out decimal parsed))
                 {
-                    if (SetProperty(ref _paidAmountText, parsed.ToString("N0")))
-                        RecalculateImportPayment();
+                    if (SetProperty(ref _paidAmountText, parsed.ToString("N0"))) RecalculateImportPayment();
                 }
             }
         }
 
-        public string RawImeiText
+        public string ImeiText
         {
-            get => _rawImeiText;
+            get => _imeiText;
             set
             {
-                if (SetProperty(ref _rawImeiText, value))
+                if (SetProperty(ref _imeiText, value))
+                {
                     RecalculateImportPayment();
+                }
             }
-        }
-
-        public decimal TotalAmount
-        {
-            get => _totalAmount;
-            set => SetProperty(ref _totalAmount, value);
-        }
-
-        public decimal RemainingDebtAmount
-        {
-            get => _remainingDebtAmount;
-            set => SetProperty(ref _remainingDebtAmount, value);
         }
 
         public string NoteText
@@ -116,13 +107,43 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
             set => SetProperty(ref _noteText, value);
         }
 
+        public string ProductSearchText
+        {
+            get => _productSearchText;
+            set => SetProperty(ref _productSearchText, value);
+        }
+
+        public string QuantityText
+        {
+            get
+            {
+                var imeis = ParseValidImeiList();
+                return $"{imeis.Count} Máy";
+            }
+        }
+
+        public string TotalAmountText => _totalAmount.ToString("N0") + " VND";
+        public string RemainingSupplierDebtText => _remainingDebtAmount.ToString("N0") + " VND";
+
+        public string PaymentStatusText
+        {
+            get
+            {
+                if (_totalAmount == 0) return "Chưa có thông tin sản phẩm và số lượng nhập.";
+                if (_remainingDebtAmount == 0) return "Cửa hàng đã thanh toán đủ 100% tiền mặt cho Nhà cung cấp.";
+                return $"Cửa hàng trả trước một phần tiền mặt, hạch toán ghi nợ gối đầu NCC số tiền: {_remainingDebtAmount:N0} VND";
+            }
+        }
+
         public ICommand ImportCommand { get; }
-        public ICommand RefreshCommand { get; }
+        public ICommand ResetFormCommand { get; }
+        public ICommand FilterProductCommand { get; }
 
         public ImportStockViewModel()
         {
             ImportCommand = new AsyncRelayCommand(ExecuteImportAsync);
-            RefreshCommand = new AsyncRelayCommand(LoadDataAsync);
+            ResetFormCommand = new RelayCommand(ExecuteResetForm);
+            FilterProductCommand = new AsyncRelayCommand(ExecuteFilterProductAsync);
             _ = LoadDataAsync();
         }
 
@@ -138,48 +159,119 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
             foreach (var item in allSuppliers) Suppliers.Add(item);
         }
 
+        private async Task ExecuteFilterProductAsync()
+        {
+            var allProducts = await _productService.GetAllAsync();
+            Products.Clear();
+
+            var filtered = allProducts.Where(p => string.IsNullOrEmpty(ProductSearchText) ||
+                                                 p.ProductName.Contains(ProductSearchText, StringComparison.OrdinalIgnoreCase) ||
+                                                 p.ProductCode.Contains(ProductSearchText, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var item in filtered) Products.Add(item);
+        }
+
+        private void ExecuteResetForm()
+        {
+            _imeiText = string.Empty;
+            _unitPriceText = string.Empty;
+            _paidAmountText = string.Empty;
+            _noteText = string.Empty;
+            _productSearchText = string.Empty;
+            _selectedProduct = null;
+            _selectedSupplier = null;
+
+            OnPropertyChanged(nameof(ImeiText));
+            OnPropertyChanged(nameof(UnitPriceText));
+            OnPropertyChanged(nameof(PaidAmountText));
+            OnPropertyChanged(nameof(NoteText));
+            OnPropertyChanged(nameof(ProductSearchText));
+            OnPropertyChanged(nameof(SelectedProduct));
+            OnPropertyChanged(nameof(SelectedSupplier));
+
+            RecalculateImportPayment();
+        }
+
+    
+        private List<string> ParseValidImeiList()
+        {
+            if (string.IsNullOrWhiteSpace(ImeiText)) return new List<string>();
+
+            // Tách chuỗi theo dấu phẩy, dấu chấm phẩy hoặc ký tự xuống dòng
+            string[] lines = ImeiText.Split(new[] { ',', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var list = new List<string>();
+            foreach (var line in lines)
+            {
+                // Làm sạch khoảng trắng rác ở hai đầu đoạn mã IMEI
+                string cleanImei = line.Trim();
+
+                // Tiêu chuẩn độ dài >= 10 ký tự 
+                if (!string.IsNullOrEmpty(cleanImei) && cleanImei.Length >= 10)
+                {
+                    list.Add(cleanImei);
+                }
+            }
+            return list.Distinct().ToList(); // Chống nhập trùng lặp ngay tại Client
+        }
+
         private void RecalculateImportPayment()
         {
-            var imeis = RawImeiText.Split(new[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                                  .Select(x => x.Trim())
-                                  .Where(x => x.Length >= 10)
-                                  .ToList();
-
+            var imeis = ParseValidImeiList();
             int quantity = imeis.Count;
+
             if (quantity == 0)
             {
-                TotalAmount = 0; RemainingDebtAmount = 0;
+                _totalAmount = 0;
+                _remainingDebtAmount = 0;
+
+                OnPropertyChanged(nameof(QuantityText));
+                OnPropertyChanged(nameof(TotalAmountText));
+                OnPropertyChanged(nameof(RemainingSupplierDebtText));
+                OnPropertyChanged(nameof(PaymentStatusText));
                 return;
             }
 
-            decimal unitPrice = decimal.Parse(string.IsNullOrWhiteSpace(UnitPriceText) ? "0" : UnitPriceText.Replace(",", "").Replace(".", ""));
-            decimal paidAmount = decimal.Parse(string.IsNullOrWhiteSpace(PaidAmountText) ? "0" : PaidAmountText.Replace(",", "").Replace(".", ""));
+            string cleanPrice = _unitPriceText.Replace(",", "").Replace(".", "").Trim();
+            string cleanPaid = _paidAmountText.Replace(",", "").Replace(".", "").Trim();
 
-            TotalAmount = unitPrice * quantity;
-            RemainingDebtAmount = TotalAmount > paidAmount ? TotalAmount - paidAmount : 0;
+            decimal.TryParse(string.IsNullOrEmpty(cleanPrice) ? "0" : cleanPrice, out decimal unitPrice);
+            decimal.TryParse(string.IsNullOrEmpty(cleanPaid) ? "0" : cleanPaid, out decimal paidAmount);
+
+            _totalAmount = unitPrice * quantity;
+            _remainingDebtAmount = _totalAmount > paidAmount ? _totalAmount - paidAmount : 0;
+
+            OnPropertyChanged(nameof(QuantityText));
+            OnPropertyChanged(nameof(TotalAmountText));
+            OnPropertyChanged(nameof(RemainingSupplierDebtText));
+            OnPropertyChanged(nameof(PaymentStatusText));
         }
 
         private async Task ExecuteImportAsync()
         {
             if (SelectedProduct == null || SelectedSupplier == null)
             {
-                MessageBoxHelper.Warning("Vui lòng chọn đầy đủ Nhà cung cấp đối tác và Sản phẩm cần nhập.");
+                MessageBoxHelper.Warning("Vui lòng chọn đầy đủ Nhà cung cấp đối tác và Sản phẩm cần nhập kho.");
                 return;
             }
 
-            var imeis = RawImeiText.Split(new[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                                  .Select(x => x.Trim())
-                                  .Where(x => x.Length >= 10)
-                                  .ToList();
-
+            var imeis = ParseValidImeiList();
             if (imeis.Count == 0)
             {
-                MessageBoxHelper.Warning("Danh sách nhập trống hoặc các mã IMEI độ dài nhỏ hơn 10 ký tự!");
+                MessageBoxHelper.Warning("Danh sách nhập hàng trống hoặc các mã số IMEI tự gõ chưa đạt độ dài tiêu chuẩn (tối thiểu 10 ký tự)!");
                 return;
             }
 
-            decimal cleanUnitPrice = decimal.Parse(string.IsNullOrWhiteSpace(UnitPriceText) ? "0" : UnitPriceText.Replace(",", "").Replace(".", ""));
-            decimal cleanPaidAmount = decimal.Parse(string.IsNullOrWhiteSpace(PaidAmountText) ? "0" : PaidAmountText.Replace(",", "").Replace(".", ""));
+            string cleanPrice = _unitPriceText.Replace(",", "").Replace(".", "").Trim();
+            decimal.TryParse(cleanPrice, out decimal cleanUnitPrice);
+            if (cleanUnitPrice <= 0)
+            {
+                MessageBoxHelper.Warning("Đơn giá nhập hàng bắt buộc phải lớn hơn 0 VND!");
+                return;
+            }
+
+            string cleanPaid = _paidAmountText.Replace(",", "").Replace(".", "").Trim();
+            decimal.TryParse(cleanPaid, out decimal cleanPaidAmount);
 
             var request = new ImportStockRequestDto
             {
@@ -188,25 +280,22 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 UserId = 1,
                 ProductId = SelectedProduct.Id,
                 UnitPrice = cleanUnitPrice,
-                TotalAmount = TotalAmount,
+                TotalAmount = _totalAmount,
                 PaidAmount = cleanPaidAmount,
                 Note = NoteText,
-                ImeiList = imeis 
+                ImeiList = imeis
             };
 
             var result = await _stockService.ImportStockAsync(request);
             if (result == "SUCCESS")
             {
-                MessageBoxHelper.Info("Nhập hàng thành công! Tồn kho và công nợ nhà cung cấp đã được tự động hạch toán.");
-                RawImeiText = string.Empty;
-                PaidAmountText = string.Empty;
-                NoteText = string.Empty;
-                RecalculateImportPayment();
+                MessageBoxHelper.Info("Nhập kho hàng thành công! Số lượng tồn kho và công nợ đối tác đã được tự động hạch toán.");
+                ExecuteResetForm();
                 await LoadDataAsync();
             }
             else
             {
-                MessageBoxHelper.Warning($"Lỗi nghiệp vụ hệ thống: {result}");
+                MessageBoxHelper.Warning($"Lỗi nghiệp vụ hệ thống từ Database: {result}");
             }
         }
     }

@@ -1,13 +1,18 @@
 ﻿<UserControl x:Class="ERP_SMART_DT_Tuan_Anh.Views.Page.ImeiInventoryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100">
+    <Grid Background="#F8FAFC" Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Style="{StaticResource CardStyle}">
+        <!-- THANH CÔNG CỤ TÌM KIẾM ĐỊNH DANH -->
+        <Border Style="{StaticResource CardStyle}" Padding="12" Margin="0,0,0,16">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -15,35 +20,45 @@
                     <ColumnDefinition Width="140"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}"
+                <!-- ĐÃ FIX: Thêm trễ và gán phím Enter kích hoạt tìm kiếm nhanh -->
+                <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged, Delay=300}"
+                         Tag="Nhập mã IMEI hoặc tên dòng máy cần truy vết..."
                          Style="{StaticResource AppTextBoxStyle}"
-                         FontSize="16"
-                         Margin="0,0,12,0"/>
+                         FontSize="15" VerticalContentAlignment="Center"
+                         Margin="0,0,12,0">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SearchCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
 
                 <Button Grid.Column="1"
-                        Content="Tìm IMEI"
+                        Content="🔍 Tìm kiếm"
                         Command="{Binding SearchCommand}"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,0,12,0"/>
+                        Height="40" Margin="0,0,12,0" Cursor="Hand"/>
 
                 <Button Grid.Column="2"
-                        Content="Tải lại"
+                        Content="🔄 Làm mới"
                         Command="{Binding LoadCommand}"
-                        Style="{StaticResource OutlineButtonStyle}"/>
+                        Style="{StaticResource OutlineButtonStyle}"
+                        Height="40" Cursor="Hand"/>
             </Grid>
         </Border>
 
+        <!-- BẢNG LƯỚI TRACKING IMEI -->
         <Border Grid.Row="1" Style="{StaticResource CardStyle}">
             <DataGrid ItemsSource="{Binding ImeiList}"
                       SelectedItem="{Binding SelectedImei}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
                       Style="{StaticResource AppDataGridStyle}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="IMEI" Binding="{Binding Imei}" Width="180"/>
-                    <DataGridTextColumn Header="Sản phẩm" Binding="{Binding Product.ProductName}" Width="*"/>
-                    <DataGridTextColumn Header="Mã sản phẩm" Binding="{Binding Product.ProductCode}" Width="130"/>
-                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status.StatusName}" Width="130"/>
-                    <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedDate, StringFormat=dd/MM/yyyy HH:mm}" Width="150"/>
-                    <DataGridTextColumn Header="Người tạo" Binding="{Binding CreatedBy}" Width="120"/>
+                    <DataGridTextColumn Header="Mã định danh IMEI" Binding="{Binding Imei}" Width="180" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="Tên sản phẩm dòng thiết bị" Binding="{Binding Product.ProductName}" Width="*"/>
+                    <DataGridTextColumn Header="Mã máy gốc" Binding="{Binding Product.ProductCode}" Width="130"/>
+                    <DataGridTextColumn Header="Trạng thái kho" Binding="{Binding Status.StatusName}" Width="130"/>
+                    <DataGridTextColumn Header="Ngày cấu hạch nhập" Binding="{Binding CreatedDate, StringFormat=dd/MM/yyyy HH:mm}" Width="150"/>
+                    <DataGridTextColumn Header="Nhân viên tạo" Binding="{Binding CreatedBy}" Width="120"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

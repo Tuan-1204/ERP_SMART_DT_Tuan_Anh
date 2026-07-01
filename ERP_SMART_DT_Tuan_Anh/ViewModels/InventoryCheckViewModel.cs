@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using ERP_SMART_DT_Tuan_Anh.Helpers;
@@ -16,50 +18,162 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         private readonly ProductService _productService = new();
         private readonly InventoryCheckService _checkService = new();
 
-        public ObservableCollection<ProductCheckModel> AuditItemsList { get; } = new();
+        public ObservableCollection<InventoryCheckDetailItemViewModel> Checks { get; } = new();
+        public ObservableCollection<ProductCheckModel> Details { get; } = new();
 
-        private string _checkNote = string.Empty;
+        private InventoryCheckDetailItemViewModel? _selectedCheck;
+        private string _note = string.Empty;
+        private string _formTitle = "Lập biên bản kiểm kê";
+        private bool _isReadOnlyGrid = false;
 
-        public string CheckNote
+        public InventoryCheckDetailItemViewModel? SelectedCheck
         {
-            get => _checkNote;
-            set => SetProperty(ref _checkNote, value);
-        }
-
-        public ICommand SaveCommand { get; }
-
-        public InventoryCheckViewModel()
-        {
-            SaveCommand = new AsyncRelayCommand(SaveCheckSheetAsync);
-            _ = InitializeCheckSheetAsync();
-        }
-
-        private async Task InitializeCheckSheetAsync()
-        {
-            AuditItemsList.Clear();
-            var products = await _productService.GetAllAsync();
-            foreach (var p in products)
+            get => _selectedCheck;
+            set
             {
-                AuditItemsList.Add(new ProductCheckModel(CalculateDifference)
+                if (SetProperty(ref _selectedCheck, value) && value != null)
                 {
-                    ProductId = p.Id,
-                    ProductCode = p.ProductCode,
-                    ProductName = p.ProductName,
-                    SystemStock = p.CurrentStock,
-                    ActualStock = p.CurrentStock,
-                    Difference = 0
-                });
+                    IsReadOnlyGrid = true;
+                    FormTitle = "Chi tiết biên bản kiểm kê";
+                    _ = LoadCheckSheetDetailsAsync(value.ProductId);
+                }
             }
         }
 
-        private void CalculateDifference()
+        public string Note
         {
-            // Hàm callback rỗng phục vụ kích hoạt tính toán đổi số liệu từ Model con
+            get => _note;
+            set => SetProperty(ref _note, value);
+        }
+
+        public string FormTitle
+        {
+            get => _formTitle;
+            set => SetProperty(ref _formTitle, value);
+        }
+
+        public bool IsReadOnlyGrid
+        {
+            get => _isReadOnlyGrid;
+            set
+            {
+                if (SetProperty(ref _isReadOnlyGrid, value))
+                {
+                    OnPropertyChanged(nameof(SystemModeText));
+                    OnPropertyChanged(nameof(FormVisibility));
+                    OnPropertyChanged(nameof(HistoryMessageVisibility));
+                }
+            }
+        }
+
+        public string SystemModeText => IsReadOnlyGrid ? "CHẾ ĐỘ LỊCH SỬ (READ-ONLY)" : "CHẾ ĐỘ LẬP PHIẾU MỚI (EDITABLE)";
+        public Visibility FormVisibility => IsReadOnlyGrid ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility HistoryMessageVisibility => IsReadOnlyGrid ? Visibility.Visible : Visibility.Collapsed;
+
+        public ICommand LoadCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand NewCommand { get; }
+
+        public InventoryCheckViewModel()
+        {
+            LoadCommand = new AsyncRelayCommand(LoadHistorySheetsAsync);
+            SaveCommand = new AsyncRelayCommand(SaveCheckSheetAsync);
+            NewCommand = new RelayCommand(ExecuteNewForm);
+
+            _ = LoadHistorySheetsAsync();
+            ExecuteNewForm();
+        }
+
+        private async Task LoadHistorySheetsAsync()
+        {
+            if (IsBusy) return;
+            try
+            {
+                IsBusy = true;
+                Checks.Clear();
+
+                var products = await _productService.GetAllAsync();
+                foreach (var p in products)
+                {
+                    Checks.Add(InventoryCheckDetailItemViewModel.FromProduct(p, p.CurrentStock));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Lỗi nạp lịch sử kiểm kê: " + ex.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task LoadCheckSheetDetailsAsync(int productId)
+        {
+            Details.Clear();
+            try
+            {
+                var products = await _productService.GetAllAsync();
+                var target = products.FirstOrDefault(p => p.Id == productId);
+                if (target != null)
+                {
+                    Details.Add(new ProductCheckModel
+                    {
+                        ProductId = target.Id,
+                        ProductCode = target.ProductCode,
+                        ProductName = target.ProductName,
+                        SystemStock = target.CurrentStock,
+                        ActualStock = target.CurrentStock,
+                        Difference = 0
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Lỗi tải chi tiết: " + ex.Message);
+            }
+        }
+
+        private void ExecuteNewForm()
+        {
+            _selectedCheck = null;
+            OnPropertyChanged(nameof(SelectedCheck));
+
+            IsReadOnlyGrid = false;
+            Note = string.Empty;
+            FormTitle = "Lập biên bản kiểm kê mới";
+
+            _ = InitializeNewCheckSheetAsync();
+        }
+
+        private async Task InitializeNewCheckSheetAsync()
+        {
+            Details.Clear();
+            try
+            {
+                var products = await _productService.GetAllAsync();
+                foreach (var p in products)
+                {
+                    Details.Add(new ProductCheckModel
+                    {
+                        ProductId = p.Id,
+                        ProductCode = p.ProductCode,
+                        ProductName = p.ProductName,
+                        SystemStock = p.CurrentStock,
+                        ActualStock = p.CurrentStock,
+                        Difference = 0
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Lỗi khởi tạo danh sách máy: " + ex.Message);
+            }
         }
 
         private async Task SaveCheckSheetAsync()
         {
-            if (AuditItemsList.Count == 0 || IsBusy) return;
+            if (Details.Count == 0 || IsBusy) return;
 
             try
             {
@@ -67,8 +181,8 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 var checkMaster = new InventoryCheckMasterDto
                 {
                     UserId = 1,
-                    Note = CheckNote,
-                    Details = AuditItemsList.Select(x => new InventoryCheckDetailDto
+                    Note = Note,
+                    Details = Details.Select(x => new InventoryCheckDetailDto
                     {
                         ProductId = x.ProductId,
                         SystemStock = x.SystemStock,
@@ -79,14 +193,14 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 bool isSaved = await _checkService.CreateCheckSheetAsync(checkMaster);
                 if (isSaved)
                 {
-                    MessageBoxHelper.Info("Lưu biên bản kiểm kê kho thành công!");
-                    CheckNote = string.Empty;
-                    await InitializeCheckSheetAsync();
+                    MessageBoxHelper.Info("Hệ thống hạch toán thành công! Biên bản kiểm kê đã được lưu.");
+                    ExecuteNewForm();
+                    await LoadHistorySheetsAsync();
                 }
             }
             catch (Exception ex)
             {
-                MessageBoxHelper.Error("Lỗi hệ thống: " + ex.Message);
+                MessageBoxHelper.Error("Lỗi lưu biên bản kiểm kê: " + ex.Message);
             }
             finally
             {
@@ -97,7 +211,6 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
 
     public class ProductCheckModel : BaseViewModel
     {
-        private readonly Action _onChangedCallback;
         private int _actualStock;
         private int _difference;
 
@@ -114,7 +227,6 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
                 if (SetProperty(ref _actualStock, value))
                 {
                     Difference = _actualStock - SystemStock;
-                    _onChangedCallback?.Invoke();
                 }
             }
         }
@@ -122,12 +234,17 @@ namespace ERP_SMART_DT_Tuan_Anh.ViewModels
         public int Difference
         {
             get => _difference;
-            set => SetProperty(ref _difference, value);
+            set
+            {
+                if (SetProperty(ref _difference, value))
+                {
+                    OnPropertyChanged(nameof(IsDeficit));
+                    OnPropertyChanged(nameof(IsSurplus));
+                }
+            }
         }
 
-        public ProductCheckModel(Action onChangedCallback)
-        {
-            _onChangedCallback = onChangedCallback;
-        }
+        public bool IsDeficit => Difference < 0;
+        public bool IsSurplus => Difference > 0;
     }
 }
